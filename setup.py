@@ -20,7 +20,7 @@ setuptools.setup(
     author='Frank Bieniek',
     author_email='fb@saleking.de',
     url='http://github.com/salesking/salesking_python_sdk',
-    packages=['salesking'],
+    packages=['salesking','warlock'],
     install_requires=[
         'requests',
         'requests-oauth',
@@ -31,7 +31,11 @@ setuptools.setup(
         'jsonpointer==0.5',
         'jsonschema>=0.7,<1',
         'validictory==0.8.3'
+        
     ],
+    dependency_links = [
+        'git+git://github.com/robbrit/warlock.git#egg=warlock-0.9.3',
+    ],             
     tests_require=[
         'mock==0.2.1',
     ],
