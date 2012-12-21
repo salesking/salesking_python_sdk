@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+SALESKING_API={
+    'APP_ID': u"YOUR APP ID",
+    'APP_SECRET': u"YOUR APP SECRET",
+    'SK_SUBDOMAIN': u"YOURSUBDOMAIN",
+    # production base url
+    #'BASE_URL': u"https://%s.salesking.eu/",
+    # development base url
+    'BASE_URL': u"https://%s.dev.salesking.eu/",
+    #basic auth
+    'SK_USER': u'YOUR API USER',
+    'SK_PASSWORD': u'YOUR API USER PASSWORD',
+}

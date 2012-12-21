@@ -1,0 +1,15 @@
+.coverage
+.tox
+.DS_Store
+*.egg-info
+*.pyc
+*.log
+*.egg
+*.db
+*.pid
+pip-log.txt
+/cover
+/build
+/dist
+/docs/html
+/docs/doctrees

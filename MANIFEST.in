@@ -1,0 +1,7 @@
+include LICENSE
+include AUTHORS
+include README.md
+include requirements.txt
+include setup.py
+include docs/*
+include lib/*
