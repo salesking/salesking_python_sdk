@@ -1,6 +1,6 @@
 from salesking.tests.base import SalesKingBaseTestCase
 from salesking import api, resources, collection
-
+from salesking.exceptions import SalesKingException
 from mock import Mock
     
     
@@ -92,15 +92,14 @@ class CollectionTestCase(CollectionBaseTestCase):
         
     def test_validate_filters(self):
         col=collection.get_collection_instance("client",self.api_mock)
+        #date-time germany
+        #self.assertTrue(col.validate_filter("created_at_from","2012-12-19T00:39:49+01:00"));
         self.assertTrue(col.validate_filter("number","string"))
         self.assertFalse(col.validate_filter("notexisting","string"))
-        # date formats are not validated
-        # they are not part of the spec
-        self.assertTrue(col.validate_filter("birthday_to","1999/01/01"));
-        self.assertTrue(col.validate_filter("birthday_to","string"));
-        self.assertTrue(col.validate_filter("birthday_to","123"));
-        self.assertTrue(col.validate_filter("birthday_to","1999-01-32"));
-        self.assertTrue(col.validate_filter("birthday_to","1999-13-01"));
+        self.assertTrue(col.validate_filter("birthday_to","2012-01-01"));
+        self.assertFalse(col.validate_filter("birthday_to","string"));
+        self.assertFalse(col.validate_filter("birthday_to","1999-01-32"));
+        self.assertFalse(col.validate_filter("birthday_to","1999-13-01"));
         self.assertTrue(col.validate_filter("birthday_to","1999-01-01"));
     
     def test_set_filters(self):
@@ -112,5 +111,5 @@ class CollectionTestCase(CollectionBaseTestCase):
     def test_add_filters(self):
         col=collection.get_collection_instance("client",self.api_mock)
         self.assertTrue(col.add_filter("number","astrstring"))
-        #self.assertFalse(col.add_filter({"notexisting":"string"}))
+        self.failUnlessRaises(SalesKingException,col.add_filter,"notexisting","string")
     

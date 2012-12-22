@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import logging
 try:
     import simplejson as json
 except ImportError:
     import json
 from urllib import urlencode
-
-from salesking.exceptions import SalesKingException
-from salesking import utils 
-from salesking.resources import API_BASE_PATH
-from salesking import resources
 from jsonschema import _flatten
+
+from salesking import resources, api
+from salesking.exceptions import SalesKingException
+from salesking.resources import API_BASE_PATH
+from salesking.utils import validators, loaders, helpers
+
+
+
 
 DEFAULT_TYPES = {
         "array" : list, "boolean" : bool, "integer" : int, "null" : type(None),
@@ -34,7 +38,7 @@ class CollectionAttributesMixin(object):
             self.resource_type = resource_type['type']
         else:
             self.resource_type = resource_type
-        self.schema = utils.load_schema_raw(self.resource_type) 
+        self.schema = loaders.load_schema_raw(self.resource_type) 
         self.autoload = False
         self.filters = dict()
         self.items = []
@@ -45,6 +49,7 @@ class CollectionAttributesMixin(object):
         self.sort = u"ASC"
         self.sort_by = None
         self._types = DEFAULT_TYPES # type mapping
+        self._last_query_str = None
 
     
     def get_sort(self):
@@ -95,22 +100,22 @@ class CollectionAttributesMixin(object):
     
     def get_items(self):
         """
-        get all items
+        :returns all fetched items (RemoteResource Json classes)
         """
         return self.items
     
     def get_resource_type(self):
         """
-        get type
+        get type to fetch
         """
         return self.resource_type
     
     def set_resource_type(self,klass):
         """
-        set type and load schema
+        set type to load and load schema
         """
         self.resource_type = klass
-        self.schema = utils.load_schema_raw(self.resource_type)
+        self.schema = loaders.load_schema_raw(self.resource_type)
 
     def set_filters(self, filters):
         """
@@ -133,7 +138,7 @@ class CollectionAttributesMixin(object):
             self.filters[key]=filter_value
             return True
         else:
-            raise SaleskingException("FILTER_INVALID",'Invalid filter value: filter:%s value:%s' % (key,filter_value))
+            raise SalesKingException("FILTER_INVALID",'Invalid filter value: filter:%s value:%s' % (key,filter_value))
     
     def _is_type(self, instance, type):
         """
@@ -153,11 +158,17 @@ class CollectionAttributesMixin(object):
     def validate_filter(self,key,filter_value):
         """
         validate the filter key and value
+        
+        :param key: property name
+        :param filter_value: value of the filter
+        :returns True if all is ok otherwise False
         """
         ok = False
         seek = u"filter[%s]" % key
         schema = None
         value  = None
+        is_string_with_format = False
+        string_format = None
         for link in self.schema['links']:
             if link['rel'] == 'instances':
                for property in link['properties']:
@@ -167,6 +178,24 @@ class CollectionAttributesMixin(object):
         if not ok:
             return False
         ok = self._is_type(filter_value, value['type'])
+        # if string with type add validation
+        if ok == True and value['type'] == 'string' and 'format' in value.keys():
+            ok = self._validate_json_format(filter_value, value)
+            
+        return ok
+    
+    def _validate_json_format(self,filter_value, schema_validation_type):
+        """
+        adds the type:string format:schema_validation_type
+        :param filter_value: value of the filter
+        :param schema_validation_type: format description of the json schema entry
+        """
+        ok = False
+        try:
+            validators.json_schema_validation_format(filter_value, schema_validation_type)
+            ok = True
+        except ValueError as e:
+            pass
         return ok
     
     def get_filters(self):
@@ -177,33 +206,40 @@ class CollectionAttributesMixin(object):
         builds the url to call
         """
         query = []
-        # build the filters
-        for filter,value in self.filters:
-            query_str = u"%s=%s" % (filter,urlencode(value))
-            query.append(query_str)
+#        # build the filters
+#        for afilter in self.filters.keys():
+#            value = self.filters[afilter]
+#            print"filter:%s value:%s" % (afilter,value)
+#            value = urlencode(value)
+#            query_str = u"%s=%s" % (afilter, value)
+        if len(self.filters) > 0:
+            query.append(urlencode(self.filters))
         if self.sort:
-            query_str = u"%s=%s" % (u"sort",self.sort)
+            query_str = u"%s=%s" % (u"sort", self.sort)
             query.append(query_str)
         if self.sort_by:
-            query_str = u"%s=%s" % (u"sort_by",self.sort_by)
+            query_str = u"%s=%s" % (u"sort_by", self.sort_by)
             query.append(query_str)
         if self.per_page:
-            query_str = u"%s=%s" % (u"per_page",self.per_page)
+            query_str = u"%s=%s" % (u"per_page", self.per_page)
             query.append(query_str)
         if page:
-            query_str = u"%s=%s" % (u"page",page)
+            query_str = u"%s=%s" % (u"page", page)
             query.append(query_str)
         query = u"?%s" % (u"&".join(query))
         url = u"%s%s" % (self.get_list_endpoint()['href'],query)
         url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH,url)
         msg = "_pre_load: url:%s" % url
         log.debug(msg)
-        print msg
+        #print msg
         return url
     
     def get_list_endpoint(self, rel=u"instances"):
         """
         get the configured list entpoint for the schema.type
+        :param rel: lookup rel: value inside the links section
+        :returns the value
+        :raises APIException
         """
         schema_loaded = not self.schema is None
         links_present = "links" in self.schema.keys()
@@ -222,17 +258,20 @@ class CollectionAttributesMixin(object):
         post load processing
         """
         if response is not None and response.status_code == 200:
-            types = utils.pluralize(self.resource_type)
+            types = helpers.pluralize(self.resource_type)
             body = json.loads(response.content, encoding='utf-8')
             self.total_entries = body['collection']['total_entries']
             self.total_pages = body['collection']['total_pages']
             self.current_page = body['collection']['current_page']
+            # in case this obj gets reused to run another query reset the result
+            if self.total_entries == 0 and self.total_pages == 1:
+                self.items = []
             ## now get the items from the class factory
             for object in body[types]:
                 item_cls = resources.get_model_class(self.resource_type)
                 properties_dict = object[self.resource_type]
-                new_dict = utils.remove_properties_containing_None(properties_dict)
-                item = item_cls(new_dict,api=self.__api__)
+                new_dict = helpers.remove_properties_containing_None(properties_dict)
+                item = item_cls(new_dict)
                 ## add the items
                 self.items.append(item)
             #autoload is true, so lets fetch all the other pages recursivly
@@ -252,6 +291,9 @@ class CollectionResource(CollectionAttributesMixin):
     def load(self,page = None):
         """
         call to execute the collection loading
+        :param page: integer of the page to load
+        :returns response
+        :raises the SalesKingException
         """
         url = self._pre_load(page)
         response = self._load(url)
@@ -261,22 +303,30 @@ class CollectionResource(CollectionAttributesMixin):
     def _load(self, url):
         """
         Execute a request against the Salesking API to fetch the items
-        :param int $page page number to fetch
-        :return SaleskingCollection
-        :raises SaleskingException
+        :param url: url to fetch
+        :return response
+        :raises SaleskingException with the corresponding http errors
         """
         msg = "_load: %s" % url
+        self._last_query_str = url
         log.debug(msg)
-        print msg
+        #print msg
         response = self.__api__.request(url)
         return response
         
-def get_collection_instance(klass, api = None,**kwargs):
+def get_collection_instance(klass, api_client = None, request_api=True, **kwargs):
+    """
+    instatiates the collection lookup of json type klass
+    :param klass: json file name
+    :param api_client: transportation api
+    :param request_api: if True uses the default APIClient
+    """
     _type = klass
+    if api_client is None and request_api:
+        api_client = api.APIClient()
     if isinstance(klass, dict):
         _type = klass['type']
-    #schema = load_schema_raw(_type)
-    obj = CollectionResource(_type, api,**kwargs)
+    obj = CollectionResource(_type, api_client,**kwargs)
     return obj        
  
 #

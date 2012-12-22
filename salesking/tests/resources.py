@@ -5,7 +5,9 @@ class ResourceBaseTestCase(SalesKingBaseTestCase):
 
     valid_data = {'organisation': u"salesking",
                   'last_name': u"Jane",
-                  'first_name': u"Dow"
+                  'first_name': u"Dow",
+                  'notes': u"APITEST",
+                  'email': u"salesking.py-api@mailinator.com"
     }
     
     required_missing_data = {
@@ -57,7 +59,8 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         self.assertEquals(client.__class__.__name__,u'client')
         self.assertEquals(client.organisation,u'salesking')
         self.assertEquals(client.first_name,u"Dow")
-        self.assertTrue(client.__api__ is None)
+        #autoinitialize ? 
+        self.assertFalse(client.__api__ is None)
         msg = "data is: %s" % (client.get_data())
         self.assertTrue(len(client.get_data())>0,msg)
         client.first_name = u"honey"
@@ -91,7 +94,6 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         model = resources.get_model_class("client",api=clnt)
         client = model(self.valid_data)
         self.assertEquals(client.__class__.__name__,u'client')
-        
         msg = "data is: %s" % (client.get_data())
         self.assertTrue(len(client.get_data())>0,msg)
         ### mock the save response ###
@@ -104,7 +106,23 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         self.assertEquals(obj.id, response.mock_id)
         obj.last_name = u"lasst"
         self.assertEquals(obj.last_name, u"lasst")
-        
+
+    def test_client_add_address(self):
+        model = resources.get_model_class("client")
+        client = model(self.valid_data)
+        model = resources.get_model_class("address")
+        address = model()
+        address.city = u"Duisburg"
+        address.address1 = u"Foo Street"
+        address.address2 = u"Appartment Bar"
+        address.address_type = u"work"
+        msg = "data is: %s" % (address.get_data())
+        self.assertTrue(len(address.get_data())>0,msg)
+        msg = "data is: %s" % (client.get_data())
+        self.assertTrue(len(client.get_data())>0,msg)
+        client.addresses = [address]
+        msg = "data is: %s" % (client.get_data())
+        self.assertTrue(client.get_data().find(u"Duisburg")>0,msg)
         
          
 #    def test_client_resource_schema_get_success(self):

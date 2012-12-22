@@ -24,8 +24,9 @@ from warlock import model_factory
 from warlock.model import Model
 from salesking import exceptions
 
-from salesking.utils import load_schema_raw, remove_properties_containing_None
+from salesking.utils import loaders, helpers
 from salesking.exceptions import SalesKingException
+from salesking.api import APIClient
 
 
 
@@ -159,6 +160,10 @@ class BaseResource(Resource):
 class RemoteResource(BaseResource):
     """
     Resource dealing with the api and transportation
+    self.load(id)
+    self.save()
+    self.delete()
+    
     """
     def __repr__(self):
         return u'<RemoteResource %s> %s' %(self.get_id(),self.schema)
@@ -183,6 +188,11 @@ class RemoteResource(BaseResource):
     
     
     def _do_api_call(self, call_type=u'', id=None):
+        """
+        returns a response if it is a valid call
+        otherwise the corresponding error
+        
+        """
         endpoint = None
         url = None
         if call_type == u'load':
@@ -235,23 +245,37 @@ class RemoteResource(BaseResource):
             raise e
         
     def get_object_from_response(self, response):
+        """
+        transforms the response into a new object
+        :param response: valid respone status code 200
+        :returns new instance of current class
+        """
         klass = self.schema['title']
         cls = get_model_class(klass, api=self.__api__)
         jdict = json.loads(response.content, encoding="utf-8")
         ### check if we have a response
-        
         properties_dict = jdict[self.schema['title']]
-        new_dict = remove_properties_containing_None(properties_dict)
+        new_dict = helpers.remove_properties_containing_None(properties_dict)
         obj = cls(new_dict)
         return obj
     
       
 
-def get_model_class( klass, api = None):
+def get_model_class( klass, api = None, use_request_api = True):
+    """
+    Generates the Model Class based on the klass 
+    loads automatically the corresponding json schema file form schemes folder
+    :param klass: json schema filename
+    :param use_request_api: if True autoinitializes request class if api is None
+    :param api: the transportation api
+                if none the default settings are taken an instantiated
+    """
+    if api is None and use_request_api:
+        api = APIClient()
     _type = klass
     if isinstance(klass, dict):
         _type = klass['type']
-    schema = load_schema_raw(_type)
+    schema = loaders.load_schema_raw(_type)
     model_cls = model_factory(schema, base_class = RemoteResource)
     model_cls.__api__ = api
     return model_cls
