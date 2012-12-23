@@ -31,14 +31,15 @@ setuptools.setup(
         'jsonpointer==0.5',
         'jsonschema>=0.7,<1',
         'validictory==0.8.3',
-        'iso8601==0.1.4'
+        'iso8601==0.1.4',
+        'warlock==0.7.0'
         
     ],
     dependency_links = [
-        'git+git://github.com/robbrit/warlock.git#egg=warlock-0.9.3',
+        'https://github.com/bcwaldon/warlock/archive/0.7.1-proposed.zip#egg=warlock-0.7.0',
     ],             
     tests_require=[
-        'mock==0.2.1',
+        'mock==1.0.1',
     ],
     include_package_data=True,
     zip_safe = False,
