@@ -8,6 +8,11 @@ yourself again.
 
 The SDK wraps the REST json schema API.    
 
+## Install
+	
+	>>> pip install salesking
+
+
 ## How the SDK works
 
 # Examples
