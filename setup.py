@@ -32,10 +32,10 @@ setup(
         'jsonschema>=0.7,<1',
         'validictory==0.8.3',
         'iso8601==0.1.4',
-        'warlock==0.7.0'
+        'warlock==0.8.0'
     ],
     dependency_links = [
-        'https://github.com/bcwaldon/warlock/tarball/0.7.0#egg=warlock-0.7.0',
+        'https://github.com/bcwaldon/warlock/tarball/0.8.0#egg=warlock-0.8.0',
     ],             
     tests_require=[
         'mock==1.0.1',
