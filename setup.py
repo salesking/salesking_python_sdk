@@ -1,4 +1,4 @@
-import setuptools
+from setuptools import setup, find_packages
 
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
@@ -13,14 +13,14 @@ CLASSIFIERS = [
 ]
 
 
-setuptools.setup(
+setup(
     name='salesking',
     version='0.0.1',
     description='SalesKing API Wrapper and SDK',
     author='Frank Bieniek',
     author_email='fb@saleking.de',
     url='http://github.com/salesking/salesking_python_sdk',
-    packages=['salesking','warlock'],
+    packages=find_packages('.'),
     install_requires=[
         'requests',
         'requests-oauth',
@@ -32,11 +32,10 @@ setuptools.setup(
         'jsonschema>=0.7,<1',
         'validictory==0.8.3',
         'iso8601==0.1.4',
-        'warlock==0.7.0'
-        
+        'warlock==0.8.0'
     ],
     dependency_links = [
-        'https://github.com/bcwaldon/warlock/archive/0.7.1-proposed.zip#egg=warlock-0.7.0',
+        'https://github.com/bcwaldon/warlock/tarball/0.8.0#egg=warlock-0.8.0',
     ],             
     tests_require=[
         'mock==1.0.1',
