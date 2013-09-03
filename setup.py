@@ -18,7 +18,7 @@ setup(
     version='0.0.2',
     description='SalesKing API Wrapper and SDK',
     author='Frank Bieniek',
-    author_email='fb@saleking.de',
+    author_email='fb@salesking.de',
     url='http://github.com/salesking/salesking_python_sdk',
     packages=find_packages('.'),
     install_requires=[
