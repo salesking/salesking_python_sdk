@@ -15,7 +15,7 @@ CLASSIFIERS = [
 
 setup(
     name='salesking',
-    version='0.0.1',
+    version='0.0.2',
     description='SalesKing API Wrapper and SDK',
     author='Frank Bieniek',
     author_email='fb@saleking.de',
