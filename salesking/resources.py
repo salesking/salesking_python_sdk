@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 #see for the ideas
 # https://github.com/dstufft/slumber
 # https://github.com/bcwaldon/warlock
 ## check sluber
-## check warlo
+## check warlock
 
 """
     Initial API based on slumber and warlock
@@ -34,6 +37,7 @@ log = logging.getLogger(__name__)
 
 API_BASE_PATH = u'api/'
 
+
 class Resource(Model):
     """
     General Flow for load, save, delete
@@ -47,7 +51,6 @@ class Resource(Model):
     def _load(self,id,*args,**kwargs):
         raise Exception("Please implement _save() in subclass")
     
-    
     def _pre_save(self,*args,**kwargs):
         """
         pre save hook
@@ -59,7 +62,6 @@ class Resource(Model):
         post save hook
         """
         return response
-    
     
     def save(self, *args, **kwargs):
         """
@@ -113,10 +115,9 @@ class Resource(Model):
         response = self._delete(*args, **kwargs)
         response = self._post_delete(response, *args, **kwargs)
         return response
-    
+
 
 class BaseResource(Resource):
-    #id = None #readonly
     __api__ = None 
     
     def get_id(self):
@@ -149,14 +150,14 @@ class BaseResource(Resource):
                       return row
         raise APIException("ENDPOINT_NOTFOUND","invalid endpoint")
     
-    
     def get_resource_remote_schema(self):
         response = self._do_api_call(call_type="schema")
         return response
     
     def _try_to_serialize(self,response):
         return response
-    
+
+
 class RemoteResource(BaseResource):
     """
     Resource dealing with the api and transportation
@@ -165,9 +166,9 @@ class RemoteResource(BaseResource):
     self.delete()
     
     """
+
     def __repr__(self):
         return u'<RemoteResource %s> %s' %(self.get_id(),self.schema)
-    
     
     def _save(self):
         is_update = self.get_id() is not None 
@@ -280,137 +281,3 @@ def get_model_class( klass, api = None, use_request_api = True):
     model_cls.__api__ = api
     return model_cls
 
-
-
-    
-    
-
-
-#class CallableMixin(object):
-#    """
-#    Resource provides the main functionality behind slumber. It handles the
-#    attribute -> url, kwarg -> query param, and other related behind the scenes
-#    python to HTTP transformations. It's goal is to represent a single resource
-#    which may or may not have children.
-#
-#    It assumes that a Meta class exists at self._meta with all the required
-#    attributes.
-#    """
-#
-#    def __init__(self, *args, **kwargs):
-#        self._store = kwargs
-#
-#    def __call__(self, id=None, format=None, url_override=None):
-#        """
-#        Returns a new instance of self modified by one or more of the available
-#        parameters. These allows us to do things like override format for a
-#        specific request, and enables the api.resource(ID).get() syntax to get
-#        a specific resource by it's ID.
-#        """
-#
-#        # Short Circuit out if the call is empty
-#        if id is None and format is None and url_override is None:
-#            return self
-#
-#        kwargs = {}
-#        for key, value in self._store.iteritems():
-#            kwargs[key] = value
-#
-#        if id is not None:
-#            kwargs["base_url"] = url_join(self._store["base_url"], id)
-#
-#        if format is not None:
-#            kwargs["format"] = format
-#
-#        if url_override is not None:
-#            # @@@ This is hacky and we should probably figure out a better way
-#            #    of handling the case when a POST/PUT doesn't return an object
-#            #    but a Location to an object that we need to GET.
-#            kwargs["base_url"] = url_override
-#
-#        kwargs["session"] = self._store["session"]
-#
-#        return self.__class__(**kwargs)
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#class ResourceProxy(object):
-#    """Proxy object to a resource
-#
-#    It lazily fetches data.
-#    """
-#
-#    def __init__(self, url, service, api):
-#        self._url = url
-#        self._service = service
-#        self._api = api
-#        self._type, id = self._service.parse_resource_url(self._url)
-#        self._id = int(id)
-#        self._resource = None
-#
-#    def __repr__(self):
-#        if self._resource:
-#            return repr(self._resource)
-#        else:
-#            return '<ResourceProxy %s/%s>' % (self._type, self._id)
-#
-#    def __getattr__(self, attr):
-#        return getattr(self._get(), attr)
-#
-#    def __getitem__(self, item):
-#        return self._get()[item]
-#
-#    def __contains__(self, attr):
-#        return attr in self._get()
-#
-#    def _get(self):
-#        """Load the resource
-#        
-#        Do nothing if already loaded.
-#        """
-#        if not self._resource:
-#            self._resource = self._api(self._type, self._id)
-#        return self._resource
-#
-#
-#class Resource(object):
-#    """A fetched resource"""
-#
-#    def __init__(self, resource, type, id, url):
-#        self._resource = resource
-#        self._type = type
-#        self._id = id
-#        self._url = url
-#
-#    def __repr__(self):
-#        return '<Resource %s: %s>' % (self._url, self._resource)
-#
-#    def __getattr__(self, attr):
-#        if attr in self._resource:
-#            return self._resource[attr]
-#        else:
-#            raise AttributeError(attr)
-#    
-#    def __getitem__(self, item):
-#        if item in self._resource:
-#            return self._resource[item]
-#        else:
-#            raise KeyError(item)
-#
-#    def __contains__(self, attr):
-#        return attr in self._resource

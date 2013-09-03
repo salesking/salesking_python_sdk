@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
 class SalesKingException(Exception):
     
     def __init__(self, code, message, errors = None,**kwargs):

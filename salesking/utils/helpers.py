@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys
 import os
 import logging
@@ -35,10 +37,6 @@ def remove_properties_containing_None(properties_dict):
             new_dict[key] = value
     return new_dict
 
-
-
-
-    
 def json_to_py(j):
     o = json.loads(j)
     if isinstance(o, dict):
