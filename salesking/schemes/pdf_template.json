@@ -1,7 +1,7 @@
 { "type":"object",
-  "title": "export_template",
-  "name": "export_template",
-  "description":"An export_template in SK",
+  "title": "pdf_template",
+  "name": "pdf_template",
+  "description":"An PDF template. For now this is a read-only resource ONLY returning your own templates. It fits the most important use-case: A user can select a print template.",
   "properties":{
     "id":{
       "description":"Unique identifier - UUID",
@@ -12,27 +12,26 @@
       "minLength":22
     },
     "name":{
-      "description": "A meaningful name.",
+      "description": "Name of the template as shown to the user.",
       "required":true,
       "type":"string",
       "maxLength": 50
     },
-    "text":{
-      "description": "Text with placeholders, replaced when the template is used.",
-      "required":true,
+    "description":{
+      "description": "Additional information about the template.",
       "type":"string",
       "format":"text"
     },
     "kind":{
       "description": "Kind of object the template can be used for.",
       "required":true,
-      "enum": ["invoice", "estimate", "credit_note", "payment_reminder", "order", "contact", "payment", "comment", "email", "history", "product","recurring"],
+      "enum": ["invoice", "estimate", "credit_note", "payment_reminder", "order"],
       "type":"string"
     },
-    "filename":{
-      "description": "Name of the created export file. Date placeholders can be used: %y-%m-%d_%H-%M_clients.csv",
+    "language":{
+      "description": "Should be a valid language short-code: de-DE, fr, en-GB; like defined in your account language menu. A multi-language template should belong to a parent. From then on just choose the parent-template and the localized child version is used for printing if the related object(order, invoice,..) has the appropriate language.",
       "type":"string",
-      "maxLength": 255
+      "maxLength": 10
     },
     "created_at":{
       "description": "Date the object was created in SK. Never changes afterwards",
@@ -55,10 +54,10 @@
   },
    "links":[
     { "rel": "self",
-      "href": "export_templates/{id}"
+      "href": "pdf_templates/{id}"
     },
     { "rel": "instances",
-      "href": "export_templates",
+      "href": "pdf_templates",
       "properties" : {
         "page":{
           "title" : "Page",
@@ -72,29 +71,29 @@
         },
         "sort_by":{
           "title" : "Sort by",
-          "description": "Sort the results by the given field => number",
-          "enum":["created_at", "updated_at"],
+          "description": "Sort the results by the given field",
+          "default":"name",
+          "enum":["created_at", "updated_at", "name", "kind"],
           "type": "string"
         },
         "sort":{
           "title" : "Sort",
-          "enum":["ASC","DESC"],
           "description": "Sort the results in ASC or DESC",
-          "type": "string"
+          "type":"string",
+          "enum":["ASC","DESC"]
+        },
+        "filter[q]":{
+          "title" : "Search wildcard",
+          "description": "Searches in name, description",
+          "type":"string"
+        },
+        "filter[kind]":{
+          "title" : "Search by kind",
+          "description": "Kind of object this template can be used for: invoice, order",
+          "type":"string",
+          "enum":["invoice","estimate", "credit_note", "payment_reminder", "order"]
         }
       }
-    },
-    { "rel": "destroy",
-      "href": "export_templates/{id}",
-      "method": "DELETE"
-    },
-    { "rel": "update",
-      "href": "export_templates/{id}",
-      "method": "PUT"
-    },
-    { "rel": "create",
-      "href": "export_templates",
-      "method": "POST"
     }
   ]
 }

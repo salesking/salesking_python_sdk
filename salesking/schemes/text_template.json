@@ -1,36 +1,41 @@
 { "type":"object",
   "title": "text_template",
+  "name": "text_template",
   "description":"An text_template in SK",
-  "properties": {
-    "id": {
-      "description": "uuid of the text template",
+  "properties":{
+    "id":{
+      "description":"Unique identifier - UUID",
       "identity":true,
       "readonly":true,
-      "type":"string"
+      "type":"string",
+      "maxLength": 22,
+      "minLength":22
     },
-    "name": {
+    "name":{
       "description": "A meaningful name.",
       "required":true,
-      "type":"string"
+      "type":"string",
+      "maxLength": 50
     },
-    "text": {
+    "text":{
       "description": "Text which may contain placeholders, replaced when the template is used.",
       "required":true,
-      "type":"string"
-    },   
-    "kind": {
-      "description": "Kind of object in which the text is used. If empty the snippet can be used globally, but watch those placeholder.",
+      "type":"string",
+      "format":"text"
+    },
+    "kind":{
+      "description": "Kind of object the template can be used for. If empty the snippet can be used global. In this case watch not all placeholders are available: a client has different fields than an invoice.",
       "required":true,
-      "enum": ["","invoice", "estimate", "credit_note", "payment_reminder", "order", "client", "email"],
+      "enum": ["","invoice", "estimate", "credit_note", "payment_reminder", "order", "contact", "email"],
       "type":"string"
     },
-    "created_at": {
+    "created_at":{
       "description": "Date the object was created in SK. Never changes afterwards",
       "format":"date-time",
       "readonly":true,
       "type":"string"
     },
-    "updated_at": {
+    "updated_at":{
       "description": "Date the object was edited in SK.",
       "format":"date-time",
       "readonly":true,
@@ -38,7 +43,9 @@
     },
     "team_id":{
       "description": "A team uuid. If set only the team and its parent teams can see the record.",
-      "type":"string"
+      "type":"string",
+      "maxLength": 22,
+      "minLength":22
     }
   },
    "links":[
@@ -67,7 +74,8 @@
         "sort":{
           "title" : "Sort",
           "enum":["ASC","DESC"],
-          "description": "Sort the results in ASC or DESC"
+          "description": "Sort the results in ASC or DESC",
+          "type": "string"
         }
       }
     },

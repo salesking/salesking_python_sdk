@@ -1,23 +1,36 @@
 { "type":"object",
   "title": "order",
+  "name": "order",
   "description": "An order",
   "properties":{
     "id":{
-      "description": "UUID assigned by SK",
+      "description":"Unique identifier - UUID",
       "identity":true,
       "readonly":true,
-      "type":"string"
+      "type":"string",
+      "maxLength": 22,
+      "minLength":22
     },
     "number":{
       "description": "Unique number assigned by SK order number schema. Auto-assigned when order is opened. Required unless doc status is draft.",
-      "type":"string"
+      "type":"string",
+      "maxLength": 50
     },
     "address_field":{
       "description": "Receiver address, normally shown in envelope window. Defaults to client address_field if empty and client_id present.",
       "type":"string"
     },
     "date":{
-      "description": "Date the order is issued. Automatically set when order is opened. Required for non-draft documents.",
+      "description": "Date the order is issued. Automatically set when order is opened. Required for non-draft documents. YYYY-MM-DD",
+      "format":"date",
+      "type":"string"
+    },
+    "due_days":{
+      "description": "Used to calculate the due date for the document. Useless if date and due date are present.",
+      "type":"integer"
+    },
+    "due_date":{
+      "description": "Auto-calculated from date + due days if empty and the document is opened. YYYY-MM-DD",
       "format":"date",
       "type":"string"
     },
@@ -29,33 +42,53 @@
     },
     "external_ref":{
       "description": "Some external reference, whatever this may be.",
-      "type":"string"
+      "type":"string",
+      "maxLength": 255
     },
     "payment_method":{
-      "description": "How the document is beeing payed. Used in new payments.",
+      "description": "How the document is being payed. Used in new payments.",
       "enum":["cash","bank_transfer","credit_card","paypal","direct_debit","cheque", "moneybookers", "premium_sms"],
       "type":"string"
     },
     "title":{
-      "description": "The headline of a document. Use SK placeholders to prevent exessive typing e.g. 'Your order [number]'",
-      "type":"string"
+      "description": "The headline of a document. Use SK placeholders to prevent excessive typing e.g. 'Your order [number]'",
+      "type":"string",
+      "maxLength": 255
     },
     "notes_before":{
-      "description": "Notes shown before the line items. Normaly contains salutation and other introductional information. SK placeholders can be used.",
-      "type":"string"
+      "description": "Notes shown before the line items. Normally contains salutation and other introductional information. SK placeholders can be used.",
+      "type":"string",
+      "format":"text"
     },
     "notes_after":{
       "description": "Notes shown after the line items. Can contain information about payments, bank account or a thank-you message. SK placeholders can be used.",
-      "type":"string"
+      "type":"string",
+      "format":"text"
     },
-    "tag_list": {
-      "description": "Space separated list of tags.",
+    "tag_list":{
+      "description": "Space separated list of tags. Are split and saved as Tag objects on create, update.",
       "type":"string"
     },
     "language":{
       "description": "Should be a valid language short-code: de-DE, fr, en-GB; like defined in your account language menu. When the document is emailed or printed, a localized version of a multi-language template(email, pdf) will be used if available. Defaults to the clients language, if empty and a client is assigned.",
       "type":"string",
       "maxLength": 10
+    },
+    "currency":{
+      "description": "Currency code as defined by the ISO 4217 standard (3-letter UPCASE: EUR, USD)",
+      "type":"string",
+      "maxLength": 3,
+      "minLength": 3
+    },
+    "exchange_rate":{
+      "description": "The exchange rate from the foreign document currency(eg. USD) to the company currency(EUR). If the rate is empty we use the exchange rate on the document date or today if doc.date is empty. If there is no rate for this day, say on weekends, the closest previous day is taken(Sunday->Friday). If you open the doc at a later time make sure to manually refresh the rate, as we dont change it. ",
+      "readonly":true,
+      "type":"number"
+    },
+    "gross_total_exchanged":{
+      "description": "Exchanged gross total, in your company currency.",
+      "readonly":true,
+      "type":"number"
     },
     "archived_pdf":{
       "description": "Archived PDF version of the document. Is created when an document is printed and archived. A document can have multiple archived versions. This only returns the most recent one. ",
@@ -64,23 +97,48 @@
       "properties":{"$ref":"./attachment.json#properties"}
     },
     "client":{
-      "description": "The associated client. New documents cannot create a client, use client_id to set it.",
+      "description": "DEPRECATED: use contact",
       "readonly":true,
       "type":"object",
       "properties":{"$ref":"./client.json#properties"}
     },
     "client_id":{
-      "description": "The clients uuid. If a new client is assigned its language, address field are used if those fields are not set.",
-      "type":"string"
+      "description": "DEPRECATED: use contact_id",
+      "type":"string",
+      "maxLength": 22,
+      "minLength":22
+    },
+    "contact":{
+      "description": "The contact for the document. Use contact_id field to set a contact.",
+      "readonly":true,
+      "type":"object",
+      "properties":{"$ref":"./contact.json#properties"}
+    },
+    "contact_id":{
+      "description": "The contact uuid. When assigning a contact its language, currency, address_field (due days, cash discount) values are used for the document if those doc-fields are not set.",
+      "type":"string",
+      "maxLength": 22,
+      "minLength":22
     },
     "team_id":{
       "description": "A team uuid. If set only the team and its parent teams can see the record.",
-      "type":"string"
+      "type":"string",
+      "maxLength": 22,
+      "minLength":22
     },
     "line_items":{
-      "description": "Line items for the document",
+      "description": "DEPRECATED use items",
       "type":"array",
       "properties":{"$ref":"./line_item.json#properties"}
+    },
+    "items":{
+      "description": "Items for the document. Access items of all types including divider and sub_total items. GOTCHAs when using items instead of line_items: You MUST set the type field(CamelCasesItem class name) on each item. You cannot use both, the line_items array is stronger for backward compat.",
+      "type":"array",
+      "default": "any",
+      "minItems": 0,
+      "items": [{ "$ref": "./line_item.json#properties"},
+                { "$ref":  "./divider_item.json#properties"},
+                { "$ref": "./sub_total_item.json#properties"}]
     },
     "created_at":{
       "description": "Date the object was created in SK. Never changes afterwards.",
@@ -95,11 +153,11 @@
       "type":"string"
     },
     "lock_version":{
-      "description": "Auto-incremented to prevent concurrent updateing. First save wins and increments version.",
+      "description": "Auto-incremented to prevent concurrent updates. First save wins and increments version.",
       "type":"integer"
     },
     "gross_total":{
-      "description": "Gross total of all line items, 2 decimals places",
+      "description": "Gross total of all line items, 2 decimals places in document currency.",
       "readonly":true,
       "type":"number"
     },
@@ -114,7 +172,7 @@
       "type":"number"
     },
     "net_total_base":{
-      "description": "Net total, 6 decimal places. Summmed items net_total_base_raw (incl discount)",
+      "description": "Net total, 6 decimal places incl. discount",
       "readonly":true,
       "type":"number"
     }
@@ -138,8 +196,13 @@
         },
         "filter[q]":{
           "title" : "Search",
-          "description": "Search in title, number, addressfield",
+          "description": "Search in title, number, address field",
           "type":"string"
+        },
+        "filter[status]":{
+          "title" : "Status",
+          "description": "A single or a list of status, comma separated: open,close,draft",
+          "type" : "string"
         },
         "filter[number]":{
           "title" : "Number",
@@ -153,13 +216,13 @@
         },
         "filter[from]":{
           "title" : "From date",
-          "description": "Objects with a date after the date",
+          "description": "Objects with a date after the date. YYYY-MM-DD",
           "format" : "date",
           "type" : "string"
         },
         "filter[to]":{
           "title" : "To date",
-          "description": "Objects with date before the date",
+          "description": "Objects with date before the date. YYYY-MM-DD",
           "format" : "date",
           "type" : "string"
         },
@@ -182,7 +245,12 @@
         },
         "filter[client_ids]":{
           "title" : "Clients",
-          "description": "A single or a list of client uuids, comma separated",
+          "description": "DEPRECATED use contact_ids",
+          "type" : "string"
+        },
+        "filter[contact_ids]":{
+          "title" : "Contacts",
+          "description": "A single or a list of contact uuids, comma separated",
           "type" : "string"
         },
         "filter[ids]":{
@@ -198,13 +266,14 @@
         "sort_by":{
           "title" : "Sort by",
           "description": "Sort the results by the given field => number",
-          "enum":["title", "number", "created_at", "updated_at", "client_id", "price_total", "price_tax", "date", "due_date"],
+          "enum":["title", "number", "created_at", "updated_at", "price_total", "price_tax", "date", "due_date"],
           "type": "string"
         },
         "sort":{
           "title" : "Sort",
           "enum":["ASC","DESC"],
-          "description": "Sort the results in ASC or DESC"
+          "description": "Sort the results in ASC or DESC",
+          "type": "string"
         }
       }
     },
@@ -222,7 +291,8 @@
       "properties" : {
         "source" : {
           "title" : "Source document id",
-          "description": "Copies the source document(excl. number,date) and returns a new draft document."
+          "description": "Copies the source(excl. number,date) and returns a new draft document. You can pass any document type(e.g. invoice, order). Fields passed with the object(e.g. notes, title, address_field) are not overwritten.",
+          "type" : "string"
         }
       }
     },
@@ -234,6 +304,27 @@
     },
     { "rel": "emails",
       "href": "orders/{id}/emails"
+    },
+    { "rel": "emails create",
+      "href": "orders/{id}/emails",
+      "method": "POST",
+      "properties" : {
+        "template_id":{
+          "title" : "Template",
+          "description": "UUID of an email template to use. If present template fields like subject, body, attachments are used for the current email.",
+          "type":"string",
+          "maxLength": 22,
+          "minLength":22
+        },
+        "send":{
+          "title" : "Send email",
+          "description": "Schedule email for sending. Omit this parameter or set value to 0 or false(String or Integer) to keep email as draft."
+        },
+        "archived_pdf":{
+          "title" : "Attach archived pdf",
+          "description": "Adds the archived pdf from the related resource(if it has one)."
+        }
+      }
     },
     { "rel": "print",
       "href": "orders/{id}/print",
