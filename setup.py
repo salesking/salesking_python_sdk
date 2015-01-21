@@ -15,7 +15,7 @@ CLASSIFIERS = [
 
 setup(
     name='salesking',
-    version='0.0.2',
+    version='0.2.1',
     description='SalesKing API Wrapper and SDK',
     author='Frank Bieniek',
     author_email='fb@salesking.de',
@@ -32,7 +32,8 @@ setup(
         'jsonschema>=0.7,<1',
         'validictory==0.8.3',
         'iso8601==0.1.4',
-        'warlock==0.8.0'
+        'warlock==0.8.0',
+        'mock==1.0.1',
     ],
     dependency_links = [
         'https://github.com/bcwaldon/warlock/tarball/0.8.0#egg=warlock-0.8.0',
