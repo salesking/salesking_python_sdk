@@ -24,7 +24,7 @@ API = {
        u"app_secret": SALESKING_API['APP_SECRET'],
        u"app_scope": u"api/clients:write",
        # YOUR SALESKING SUBDOMAIN
-       u"sk_subdomain": u"frank",
+       u"sk_subdomain": SALESKING_API['SK_SUBDOMAIN'],
        
        u"base_url": SALESKING_API['BASE_URL'],
        u"oauth_redirect_url": u"http://localhost/",
@@ -34,19 +34,4 @@ API = {
        u"sk_pw": SALESKING_API['SK_PASSWORD']
 }
 
-#
-#App ID
-#    355db80d9de64051
-#App Secret
-#    c822c95e9c5218a848dc9d774b246f3e
-#URL
-#    http://localhost/
-#Support email
-#    fb@salesking.de
-#Support URL
-#    http://www.homemadebodycleanse.com
-#
-#Canvas URL
-#    http://localhost/myapp/test/
-#Canvas Page
-#    myapp
+
