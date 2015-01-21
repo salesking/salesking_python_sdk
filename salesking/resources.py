@@ -222,7 +222,7 @@ class RemoteResource(BaseResource):
         ## exceute the api request
         payload = self.get_data()
         method = endpoint['method']
-        # request raises exceptions if not 200
+        # request raises exceptions if something goes wrong
         obj = None
         try:
             response = self.__api__.request(url, method, data=payload)
@@ -240,8 +240,8 @@ class RemoteResource(BaseResource):
                 return self._try_to_serialize(response)
             elif 200 <= response.status_code <= 299:
                 return self._try_to_serialize(response)
-        except Exception,e:
-            msg ="Exception occoured %s" % e
+        except Exception, e:
+            msg ="Exception occoured %s url: %s" % (e,url)
             log.error(msg)
             raise e
         

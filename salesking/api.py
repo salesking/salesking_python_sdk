@@ -69,6 +69,8 @@ class SalesKingApiBase(object):
                                                                  **kwargs)
         response = self._request(url, method=method, data=data, headers=headers, **kwargs)
         response = self._post_request(response)
+        
+        # raises the appropriate exceptions
         response = self._handle_response(response)
         
         return response
@@ -143,7 +145,7 @@ class APIClient(SalesKingApiBase):
                    method,url,headers,data)
         #print msg
         if not self.use_oauth:
-            auth=(self.sk_user, self.sk_pw)
+            auth = (self.sk_user, self.sk_pw)
             if not self.client:
                 self.client = requests.session()
             r = self.client.request(method, url, headers=headers, data=data, auth=auth,**kwargs)
@@ -153,18 +155,25 @@ class APIClient(SalesKingApiBase):
             r = self.client.request(method, url, headers=headers, data=data,**kwargs)
         return r
     
-    def _handle_response(self,response):
+    def _handle_response(self, response):
+        """
+        internal method to throw the correct exception if something went wrong
+        """
         status = response.status_code
         if status == 400:
-          raise exceptions.BadRequest(response)
+          msg = u"bad request"
+          raise exceptions.BadRequest(status, msg)
         elif status == 401:
-          raise exceptions.Unauthorized(response)
+          msg = u"authorization failed user:%s" % (self.sk_user)
+          raise exceptions.Unauthorized(status, msg)
         elif status == 404:
           raise exceptions.NotFound()
         elif status == 422:
-          raise exceptions.BadRequest(response)
+          msg = u"bad request"
+          raise exceptions.BadRequest(status, msg)
         elif status in range(400, 500):
-          raise exceptions.HttpClientError("Client Error %s: " % (response.status_code), response=response, content=response.content)
+          msg = u"unexpected bad request"
+          raise exceptions.BadRequest(status, msg) 
         elif status in range(500, 600):
           raise exceptions.ServerError()
         return response

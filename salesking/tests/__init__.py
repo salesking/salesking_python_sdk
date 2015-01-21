@@ -7,4 +7,6 @@ from salesking.tests.resources import *
 from salesking.tests.collection import *
 
 # live tests
+from salesking.tests.test_fail_responses import *
 from salesking.tests.live_resources import *
+
