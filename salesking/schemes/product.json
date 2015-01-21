@@ -36,6 +36,15 @@
       "type":"number",
       "required":true
     },
+    "cost":{
+      "description": "Cost price of a single product",
+      "type":"number"
+    },
+    "category_name":{
+      "description": "Name of the product category. A new category is created if it does not exist.",
+      "type":"string",
+      "maxLength": 255
+    },
     "tax":{
       "description": "Tax percentage for this product.",
       "type":"number"
@@ -82,13 +91,18 @@
         },
         "per_page":{
           "title" : "Per page",
-          "description": "Results per page. Default is 10, max is 100",
+          "description": "Results per page. Default is 50, max is 200",
           "type":"number"
         },
         "filter[q]":{
           "title" : "Search",
           "description": "Wildcard search in number, name, description, price",
           "type":["string", "number"]
+        },
+        "filter[contact_ids]":{
+          "title" : "Contact IDs",
+          "description": "Comma-separated list of contact IDs. While present, it will return payments related to all contacts' documents.",
+          "type" : "string"
         },
         "filter[number]":{
           "title" : "By number",
