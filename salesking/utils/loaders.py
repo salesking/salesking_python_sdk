@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 def import_schema_to_json(name):
     schema_file = u"%s.json" % name
     schema = None
-    file_path = os.path.join(SCHEMA_ROOT,schema_file)
+    file_path = os.path.join(SCHEMA_ROOT, schema_file)
     log.debug(u"trying to load %s " % file_path)
     try:
         schema_file = open(file_path,"r").read()
@@ -66,14 +66,17 @@ def load_schema(name):
     for property in schema['properties']:
         value = schema['properties'][property]
         # arrays may contain the nesting
-        if (value['type'] == 'array'):
-            if '$ref' in value['properties'].keys():
+        is_type_array = (value['type'] == 'array')
+        if is_type_array:
+            if (('properties' in value.keys()) and 
+               ('$ref' in value['properties'].keys())):
                 ref_schema_uri=value['properties']['$ref']
                 sub_schema = load_ref_schema(ref_schema_uri)
                 schema['properties'][property]['properties'] = copy.deepcopy(sub_schema['properties'])
         #ignore the required properties auto validation
         #otherwise the json instnaciation breaks
-        if 'required' in value.keys() and value['required'] == True:
+        if (('required' in value.keys()) and 
+            (value['required'] == True)):
             log.debug("patched required validation to False - asllowing auto schema validation")
             schema['properties'][property]['required'] = False
         
