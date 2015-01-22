@@ -17,41 +17,53 @@ The SDK wraps the REST json schema API.
 
 # Examples
 
-## Create a Client
-	
-	>>> from salesking import resources
-	>>> model = resources.get_model_class("client")
-    >>> data = {"organisation": "first customer"}
-    >>> client = model(data)
-    >>> client = client.save()
+## Create a Contact
     
-## Create Client with nested Address
-	
-	>>> from salesking import resources
-	>>>	model = resources.get_model_class("client")
-    >>> client = model()
-    >>> client.organisation = "second customer"
-    >>> model = resources.get_model_class("address")
-    >>> address = model()
-    >>> address.city = u"Duisburg"
-    >>> address.address1 = u"Foo Street"
-    >>> address.address2 = u"Appartment Bar"
-    >>> address.address_type = u"work"
-    >>> client.addresses = [address]
-    >>> client = client.save()
-    >>> print client.get_data()
+    from salesking import resources
+    model = resources.get_model_class("contact")
+    data = {"organisation": "first customer via py api", "type": "Client"}
+    contact = model(data)
+    contact = contact.save()
+    
+## Create contact with nested Address
+    
+    from salesking import resources
+    model = resources.get_model_class("contact")
+    contact = model()
+    contact.organisation = "second customer"
+    contact.type = "Lead"
+    model = resources.get_model_class("address")
+    address = model()
+    address.city = u"Duisburg"
+    address.address1 = u"Foo Street"
+    address.address2 = u"Appartment Bar"
+    address.address_type = u"work"
+    contact.addresses = [address]
+    contact = contact.save()
+    print contact.get_data()
 
-## List all Clientss with salesking in the name
-	
-	>>> from salesking import collection
-	>>> valid_filters = {u"q": u"salesking"}
-    >>> col = collection.get_collection_instance("client")
-    >>> col.set_filters(valid_filters)
-    >>> col.load()
-    >>> for x in col.items:
-    >>> 	print "numbers %s" % x.number
-        
-
+## List all contacts type Lead with salesking in the name
+    # collection properties you could find here
+    http://sk-api-browser.herokuapp.com/#contact click url params on the right
+    
+    # Paging details: 
+    # GET second page with 100 in list, only id+name
+    /contacts?per_page=100&page=2&fields=id,name    
+    
+    
+    Example:
+    
+    from salesking import collection
+    valid_filters = {u"organisation": u"salesking", u"type": u"Lead"}
+    col = collection.get_collection_instance("contact")
+    col.set_filters(valid_filters)
+    col.load()
+    for x in col.items:
+     	print u"number: %s name: %s" % (x.number,x.organisation)
+    col.load(page=2)
+    for x in col.items:
+     	print u"number: %s name: %s" % (x.number,x.organisation)
+    
 ## What you need to do in order to start
 
 1) Register and activate a DEVELOPMENT USER at

@@ -6,6 +6,7 @@ try:
     import simplejson as json
 except ImportError:
     import json
+
 from urllib import urlencode
 from jsonschema import _flatten
 
@@ -15,15 +16,13 @@ from salesking.resources import API_BASE_PATH
 from salesking.utils import validators, loaders, helpers
 
 
-
-
 DEFAULT_TYPES = {
         "array" : list, "boolean" : bool, "integer" : int, "null" : type(None),
         "number" : (int, float), "object" : dict, "string" : basestring,
         
 }
 
-log=logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class CollectionAttributesMixin(object):
@@ -34,7 +33,7 @@ class CollectionAttributesMixin(object):
     
     def __init__(self, resource_type, api, **kwargs):
         self.__api__ = api
-        if isinstance(resource_type,dict):
+        if isinstance(resource_type, dict):
             self.resource_type = resource_type['type']
         else:
             self.resource_type = resource_type
@@ -66,13 +65,13 @@ class CollectionAttributesMixin(object):
     
     def set_per_page(self,entries = 100):
         """
-        set entries per page max 100
+        set entries per page max 200
         """
-        if isinstance(int,entries) and entries <=100:
+        if isinstance(entries, int) and entries <=200:
             self.per_page = int(entries)
             return self
         else:
-            raise SaleskingException("PERPAGE_ONLYINT","Please set an integer <100 for the per-page limit");
+            raise SaleskingException("PERPAGE_ONLYINT","Please set an integer <200 for the per-page limit");
  
     def get_per_page(self):
         """
@@ -134,11 +133,13 @@ class CollectionAttributesMixin(object):
         returns True on success otherwise exception
         """
         seek = u"filter[%s]" % key
-        if self.validate_filter(key,filter_value):
+        if self.validate_filter(key, filter_value):
             self.filters[key]=filter_value
             return True
         else:
-            raise SalesKingException("FILTER_INVALID",'Invalid filter value: filter:%s value:%s' % (key,filter_value))
+            #print u"failed to validate: %s" % seek
+            msg = u'Invalid filter value: filter:%s value:%s' % (key, filter_value)
+            raise SalesKingException("FILTER_INVALID", msg )
     
     def _is_type(self, instance, type):
         """
@@ -154,10 +155,11 @@ class CollectionAttributesMixin(object):
             if int in type and bool not in type:
                 return False
         return isinstance(instance, type)
-    
-    def validate_filter(self,key,filter_value):
+
+        
+    def validate_filter(self, key, filter_value):
         """
-        validate the filter key and value
+        validate the filter key and value against the collection schema
         
         :param key: property name
         :param filter_value: value of the filter
@@ -201,7 +203,7 @@ class CollectionAttributesMixin(object):
     def get_filters(self):
         return self.filters
     
-    def _pre_load(self, page = None):
+    def _pre_load(self, page = None, verbose = False):
         """
         builds the url to call
         """
@@ -228,10 +230,11 @@ class CollectionAttributesMixin(object):
             query.append(query_str)
         query = u"?%s" % (u"&".join(query))
         url = u"%s%s" % (self.get_list_endpoint()['href'],query)
-        url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH,url)
+        url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH, url)
         msg = "_pre_load: url:%s" % url
         log.debug(msg)
-        #print msg
+        if verbose:
+            print msg
         return url
     
     def get_list_endpoint(self, rel=u"instances"):
@@ -253,10 +256,19 @@ class CollectionAttributesMixin(object):
     def _load(self,url):
         raise Exception("implemnt in subclass please")
     
-    def _post_load(self,response):
+    def _post_load(self, response, verbose):
         """
         post load processing
+        fills the self.items collection
         """
+        try:
+            if verbose:
+                print response.content
+            log.debug(response.content)
+        except Exception:
+            # silence any unicode shit
+            pass
+        
         if response is not None and response.status_code == 200:
             types = helpers.pluralize(self.resource_type)
             body = json.loads(response.content, encoding='utf-8')
@@ -276,11 +288,12 @@ class CollectionAttributesMixin(object):
                 self.items.append(item)
             #autoload is true, so lets fetch all the other pages recursivly
             if(self.autoload == True and self.total_pages > 1 and page == None):
-                for x in xrange(2,self.total_pages):
-                    self.load(x)
+                for x in xrange(2, self.total_pages):
+                    self.load(page=x)
             return self
         else:
-            raise SalesKingException("LOAD_ERROR","Fetching failed, an error happend",response)
+            msg = u"Fetching failed, an error happend"
+            raise SalesKingException("LOAD_ERROR", msg, response)
     
 
 class CollectionResource(CollectionAttributesMixin):
@@ -288,31 +301,34 @@ class CollectionResource(CollectionAttributesMixin):
     Resource collection representing answers form the api
     """    
     
-    def load(self,page = None):
+    def load(self, page = None, verbose=False):
         """
         call to execute the collection loading
         :param page: integer of the page to load
+        :param verbose: boolean to print to console
         :returns response
         :raises the SalesKingException
         """
-        url = self._pre_load(page)
-        response = self._load(url)
-        response = self._post_load(response)
+        url = self._pre_load(page, verbose)
+        response = self._load(url, verbose)
+        response = self._post_load(response, verbose)
         return response
         
-    def _load(self, url):
+    def _load(self, url, verbose):
         """
         Execute a request against the Salesking API to fetch the items
         :param url: url to fetch
         :return response
         :raises SaleskingException with the corresponding http errors
         """
-        msg = "_load: %s" % url
+        msg = u"_load url: %s" % url
         self._last_query_str = url
         log.debug(msg)
-        #print msg
+        if verbose:
+            print msg
         response = self.__api__.request(url)
         return response
+        
         
 def get_collection_instance(klass, api_client = None, request_api=True, **kwargs):
     """
@@ -354,11 +370,12 @@ def get_collection_instance(klass, api_client = None, request_api=True, **kwargs
 #        }
 #    }
 
-    def sort(self,direction="ASC"):
+    def sort(self, direction = "ASC"):
         """
         set the sort to the query
+        ['ASC','DESC']
         """
-        direction=directtion.upper()
+        direction = directtion.upper()
         if direction in ['ASC','DESC']:
             self.sort = direction
         else:
@@ -368,7 +385,7 @@ def get_collection_instance(klass, api_client = None, request_api=True, **kwargs
         """
         set sort by property to the query
         """
-        seek ="sort_by"
+        seek =u"sort_by"
         # make sure that the api supports sorting for this kind of object
         if seek in self.schema['links']['instances']['properties']:
             #  make sure that we have a valid property

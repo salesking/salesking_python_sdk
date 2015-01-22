@@ -76,6 +76,12 @@ def load_schema(name):
         if 'required' in value.keys() and value['required'] == True:
             log.debug("patched required validation to False - asllowing auto schema validation")
             schema['properties'][property]['required'] = False
+        
+        # hack to bypass text format valitation to string
+        if 'type' in value.keys() and value['type'].lower() == "text":
+            log.debug("patched text to string")
+            schema['properties'][property]['type'] = "string"
+        
         #ignore the readonly properties auto validation
         #if 'readonly' in value.keys() and value['readonly'] == True:
         #    log.debug("patched required validation to none required")

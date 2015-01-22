@@ -168,7 +168,7 @@ class RemoteResource(BaseResource):
     """
 
     def __repr__(self):
-        return u'<RemoteResource %s> %s' %(self.get_id(),self.schema)
+        return u'<RemoteResource id:%s>' %(self.get_id())
     
     def _save(self):
         is_update = self.get_id() is not None 
