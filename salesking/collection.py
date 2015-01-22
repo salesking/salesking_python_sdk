@@ -15,7 +15,7 @@ from jsonschema import _flatten
 #from jsonschema import _utils
 
 from salesking import resources, api
-from salesking.exceptions import SalesKingException
+from salesking.exceptions import SalesKingException, APIException
 from salesking.resources import API_BASE_PATH
 from salesking.utils import validators, loaders, helpers
 
@@ -285,10 +285,11 @@ class CollectionAttributesMixin(object):
             self.total_pages = body['collection']['total_pages']
             self.current_page = body['collection']['current_page']
             ## now get the items from the class factory
-            for response_item in body[types]:
-                obj = self._response_item_to_object(response_item)
-                ## add the items
-                self._items.append(obj)
+            if self.total_entries != 0:
+                for response_item in body[types]:
+                    obj = self._response_item_to_object(response_item)
+                    ## add the items
+                    self._items.append(obj)
             
         else:
             msg = u"Fetching failed, an error happend"
