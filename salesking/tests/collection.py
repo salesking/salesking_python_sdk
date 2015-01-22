@@ -85,10 +85,10 @@ class CollectionTestCase(CollectionBaseTestCase):
     def test_initialise_collection(self):
         col=collection.get_collection_instance("contact",self.api_mock)
         col.load(page=1)
-        self.assertTrue(len(col.items) == 5)
-        self.assertEquals(col.items[0].number,u"K-2012-001")
-        self.assertEquals(col.items[1].organisation,u"king")
-        self.assertEquals(col.items[3].organisation,u"Werbeagentur Gl\u00fcck")
+        self.assertTrue(len(col.get_items()) == 5)
+        self.assertEquals(col.get_items()[0].number,u"K-2012-001")
+        self.assertEquals(col.get_items()[1].organisation,u"king")
+        self.assertEquals(col.get_items()[3].organisation,u"Werbeagentur Gl\u00fcck")
         
     def test_validate_filters(self):
         col=collection.get_collection_instance("contact",self.api_mock)

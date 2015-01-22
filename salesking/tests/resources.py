@@ -7,7 +7,8 @@ class ResourceBaseTestCase(SalesKingBaseTestCase):
                   'last_name': u"Jane",
                   'first_name': u"Dow",
                   'notes': u"APITEST",
-                  'email': u"salesking.py-api@mailinator.com"
+                  'email': u"sales.py-api@mailinator.com",
+                  'type': u"Client"
     }
     
     required_missing_data = {
@@ -21,8 +22,9 @@ class ResourceBaseTestCase(SalesKingBaseTestCase):
         mock_created_at = u"2012-12-19T18:19:25+01:00"
         mock_first_name = u"Dow"
         def __init__(self):
+            #@todo: needs update
             self.content =u'''
-            {"client":
+            {"contact":
             {"id":"a8Ts8KsGar4OMPabxfpGMl","number":"K-2012-012","organisation":"salesking","last_name":"Jane",
             "first_name":"Dow","gender":null,"notes":null,"position":null,"title":null,"tax_number":null,
             "vat_number":null,"email":"","url":null,"birthday":null,"tag_list":"","created_at":"2012-12-19T18:19:25+01:00",
@@ -32,20 +34,20 @@ class ResourceBaseTestCase(SalesKingBaseTestCase):
             "lock_version":0,"cash_discount":null,"due_days":null,
             "address_field":"salesking","addresses":[],"team_id":null},
             "links":[
-                {"rel":"self","href":"clients/a8Ts8KsGar4OMPabxfpGMl"},
-                {"rel":"instances","href":"clients"},{"rel":"destroy","href":"clients/a8Ts8KsGar4OMPabxfpGMl"},
-                {"rel":"update","href":"clients/a8Ts8KsGar4OMPabxfpGMl"},
-                {"rel":"create","href":"clients"},
-                {"rel":"documents","href":"clients/a8Ts8KsGar4OMPabxfpGMl/documents"},
-                {"rel":"attachments","href":"clients/a8Ts8KsGar4OMPabxfpGMl/attachments"},
-                {"rel":"invoices","href":"clients/a8Ts8KsGar4OMPabxfpGMl/invoices"},
-                {"rel":"estimates","href":"clients/a8Ts8KsGar4OMPabxfpGMl/estimates"},
-                {"rel":"orders","href":"clients/a8Ts8KsGar4OMPabxfpGMl/orders"},
-                {"rel":"credit_notes","href":"clients/a8Ts8KsGar4OMPabxfpGMl/credit_notes"},
-                {"rel":"recurrings","href":"clients/a8Ts8KsGar4OMPabxfpGMl/recurrings"},
-                {"rel":"payment_reminders","href":"clients/a8Ts8KsGar4OMPabxfpGMl/payment_reminders"},
-                {"rel":"comments","href":"clients/a8Ts8KsGar4OMPabxfpGMl/comments"},
-                {"rel":"emails","href":"clients/a8Ts8KsGar4OMPabxfpGMl/emails"}
+                {"rel":"self","href":"contacts/a8Ts8KsGar4OMPabxfpGMl"},
+                {"rel":"instances","href":"contacts"},{"rel":"destroy","href":"contacts/a8Ts8KsGar4OMPabxfpGMl"},
+                {"rel":"update","href":"contacts/a8Ts8KsGar4OMPabxfpGMl"},
+                {"rel":"create","href":"contacts"},
+                {"rel":"documents","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/documents"},
+                {"rel":"attachments","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/attachments"},
+                {"rel":"invoices","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/invoices"},
+                {"rel":"estimates","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/estimates"},
+                {"rel":"orders","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/orders"},
+                {"rel":"credit_notes","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/credit_notes"},
+                {"rel":"recurrings","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/recurrings"},
+                {"rel":"payment_reminders","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/payment_reminders"},
+                {"rel":"comments","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/comments"},
+                {"rel":"emails","href":"contacts/a8Ts8KsGar4OMPabxfpGMl/emails"}
             ]
         }
         '''.replace(u"\n",u"").replace(u"\t",u"").replace(u" ",u"")
@@ -54,9 +56,9 @@ class ResourceBaseTestCase(SalesKingBaseTestCase):
 class ResourceFactoryTestCase(ResourceBaseTestCase):
         
     def test_initialize_client_resource_success(self):
-        model = resources.get_model_class("client")
+        model = resources.get_model_class("contact")
         client = model(self.valid_data)
-        self.assertEquals(client.__class__.__name__,u'client')
+        self.assertEquals(client.__class__.__name__,u'contact')
         self.assertEquals(client.organisation,u'salesking')
         self.assertEquals(client.first_name,u"Dow")
         #autoinitialize ? 
@@ -71,7 +73,7 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         """
         test schema loading patched required to False
         """
-        model = resources.get_model_class("client")
+        model = resources.get_model_class("contact")
         thrown = False
         try:
             model(self.required_missing_data)
@@ -80,7 +82,7 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         self.assertFalse(thrown)
         
     def test_initialize_client_empty_success(self):
-        model = resources.get_model_class("client")
+        model = resources.get_model_class("contact")
         thrown = False
         client = None
         try:
@@ -91,15 +93,15 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         
     def test_client_save_response_mock_success(self):
         clnt = api.APIClient()
-        model = resources.get_model_class("client",api=clnt)
+        model = resources.get_model_class("contact",api=clnt)
         client = model(self.valid_data)
-        self.assertEquals(client.__class__.__name__,u'client')
+        self.assertEquals(client.__class__.__name__,u'contact')
         msg = "data is: %s" % (client.get_data())
         self.assertTrue(len(client.get_data())>0,msg)
         ### mock the save response ###
         response = self.mock_response
         obj = client.get_object_from_response(response)
-        self.assertEquals(obj.__class__.__name__,u'client')
+        self.assertEquals(obj.__class__.__name__,u'contact')
         self.assertEquals(obj.first_name, response.mock_first_name)
         self.assertEquals(obj.number, response.mock_number)
         self.assertEquals(obj.get_id(), response.mock_id)
@@ -108,7 +110,7 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         self.assertEquals(obj.last_name, u"lasst")
 
     def test_client_add_address(self):
-        model = resources.get_model_class("client")
+        model = resources.get_model_class("contact")
         client = model(self.valid_data)
         model = resources.get_model_class("address")
         address = model()

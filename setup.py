@@ -15,7 +15,7 @@ CLASSIFIERS = [
 
 setup(
     name='salesking',
-    version='0.2.1',
+    version='0.2.2',
     description='SalesKing API Wrapper and SDK',
     author='Frank Bieniek',
     author_email='fb@salesking.de',
@@ -30,7 +30,7 @@ setup(
         'jsonpatch==0.10',
         'jsonpointer==0.5',
         'jsonschema>=0.7,<1',
-        'validictory==0.8.3',
+        'validictory==1.0.0',
         'iso8601==0.1.4',
         'warlock==0.8.0',
         'mock==1.0.1',

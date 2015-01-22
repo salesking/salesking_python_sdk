@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+
 try:
     import simplejson as json
 except ImportError:
@@ -9,6 +10,9 @@ except ImportError:
 
 from urllib import urlencode
 from jsonschema import _flatten
+
+# other jsonchema version
+#from jsonschema import _utils
 
 from salesking import resources, api
 from salesking.exceptions import SalesKingException
@@ -18,8 +22,8 @@ from salesking.utils import validators, loaders, helpers
 
 DEFAULT_TYPES = {
         "array" : list, "boolean" : bool, "integer" : int, "null" : type(None),
-        "number" : (int, float), "object" : dict, "string" : basestring,
-        
+        "number" : (int, float), "object" : dict, "string" : basestring, 
+        "text" : basestring,
 }
 
 log = logging.getLogger(__name__)
@@ -38,19 +42,17 @@ class CollectionAttributesMixin(object):
         else:
             self.resource_type = resource_type
         self.schema = loaders.load_schema_raw(self.resource_type) 
-        self.autoload = False
         self.filters = dict()
-        self.items = []
         self.current_page = None
         self.total_pages = None
         self.total_entries = None
         self.per_page = 100
         self.sort = u"ASC"
         self.sort_by = None
+        self._items = []
         self._types = DEFAULT_TYPES # type mapping
         self._last_query_str = None
 
-    
     def get_sort(self):
         """
         get sort direction
@@ -99,10 +101,17 @@ class CollectionAttributesMixin(object):
     
     def get_items(self):
         """
-        :returns all fetched items (RemoteResource Json classes)
+        :returns all fetched _items (RemoteResource Json classes)
         """
-        return self.items
+        return self._items
+        
     
+    def clear_items(self):
+        """
+        empties the items dict
+        """
+        self._items = []
+        
     def get_resource_type(self):
         """
         get type to fetch
@@ -186,7 +195,7 @@ class CollectionAttributesMixin(object):
             
         return ok
     
-    def _validate_json_format(self,filter_value, schema_validation_type):
+    def _validate_json_format(self, filter_value, schema_validation_type):
         """
         adds the type:string format:schema_validation_type
         :param filter_value: value of the filter
@@ -203,7 +212,7 @@ class CollectionAttributesMixin(object):
     def get_filters(self):
         return self.filters
     
-    def _pre_load(self, page = None, verbose = False):
+    def _build_query_url(self, page = None, verbose = False):
         """
         builds the url to call
         """
@@ -231,7 +240,7 @@ class CollectionAttributesMixin(object):
         query = u"?%s" % (u"&".join(query))
         url = u"%s%s" % (self.get_list_endpoint()['href'],query)
         url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH, url)
-        msg = "_pre_load: url:%s" % url
+        msg = "_build_query_url: url:%s" % url
         log.debug(msg)
         if verbose:
             print msg
@@ -253,48 +262,50 @@ class CollectionAttributesMixin(object):
                       return row
         raise APIException("ENDPOINT_NOTFOUND","invalid endpoint")
     
-    def _load(self,url):
+    def _load(self, url):
         raise Exception("implemnt in subclass please")
     
     def _post_load(self, response, verbose):
         """
         post load processing
-        fills the self.items collection
+        fills the self._items collection
         """
         try:
             if verbose:
                 print response.content
             log.debug(response.content)
-        except Exception:
-            # silence any unicode shit
-            pass
-        
+        except Exception, e:
+            raise e
+            
         if response is not None and response.status_code == 200:
             types = helpers.pluralize(self.resource_type)
+            #print "types %s" % types
             body = json.loads(response.content, encoding='utf-8')
             self.total_entries = body['collection']['total_entries']
             self.total_pages = body['collection']['total_pages']
             self.current_page = body['collection']['current_page']
-            # in case this obj gets reused to run another query reset the result
-            if self.total_entries == 0 and self.total_pages == 1:
-                self.items = []
             ## now get the items from the class factory
-            for object in body[types]:
-                item_cls = resources.get_model_class(self.resource_type)
-                properties_dict = object[self.resource_type]
-                new_dict = helpers.remove_properties_containing_None(properties_dict)
-                item = item_cls(new_dict)
+            for response_item in body[types]:
+                obj = self._response_item_to_object(response_item)
                 ## add the items
-                self.items.append(item)
-            #autoload is true, so lets fetch all the other pages recursivly
-            if(self.autoload == True and self.total_pages > 1 and page == None):
-                for x in xrange(2, self.total_pages):
-                    self.load(page=x)
-            return self
+                self._items.append(obj)
+            
         else:
             msg = u"Fetching failed, an error happend"
             raise SalesKingException("LOAD_ERROR", msg, response)
+        
+        return self
     
+    def _response_item_to_object(self, resp_item):
+        """
+        take json and make a resource out of it
+        """
+        item_cls = resources.get_model_class(self.resource_type)
+        properties_dict = resp_item[self.resource_type]
+        new_dict = helpers.remove_properties_containing_None(properties_dict)
+        # raises exception if something goes wrong
+        obj = item_cls(new_dict)
+        return obj
 
 class CollectionResource(CollectionAttributesMixin):
     """
@@ -309,7 +320,7 @@ class CollectionResource(CollectionAttributesMixin):
         :returns response
         :raises the SalesKingException
         """
-        url = self._pre_load(page, verbose)
+        url = self._build_query_url(page, verbose)
         response = self._load(url, verbose)
         response = self._post_load(response, verbose)
         return response
@@ -342,7 +353,7 @@ def get_collection_instance(klass, api_client = None, request_api=True, **kwargs
         api_client = api.APIClient()
     if isinstance(klass, dict):
         _type = klass['type']
-    obj = CollectionResource(_type, api_client,**kwargs)
+    obj = CollectionResource(_type, api_client, **kwargs)
     return obj        
  
 #

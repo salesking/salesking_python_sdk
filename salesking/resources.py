@@ -25,6 +25,7 @@ except ImportError:
 
 from warlock import model_factory
 from warlock.model import Model
+
 from salesking import exceptions
 
 from salesking.utils import loaders, helpers

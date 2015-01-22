@@ -97,11 +97,11 @@ The SDK wraps the REST json schema API.
 
 2) activate the virtualenv
 
-3) run pip install -e salesking
+3) run pip install -e .\salesking
 
 4) configure your local_settings.py
 
-5) run python -m unittest salesking.tests
+5) run python -m unittest tests (logger silenced)
 
 
 # TODO:
