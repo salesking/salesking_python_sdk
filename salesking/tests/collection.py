@@ -1,16 +1,17 @@
-from salesking.tests.base import SalesKingBaseTestCase
-from salesking import api, resources, collection
-from salesking.exceptions import SalesKingException
 from mock import Mock
-    
-    
+
+from salesking.tests.base import SalesKingBaseTestCase
+from salesking import api, collection
+from salesking.exceptions import SalesKingException
+
+
 class CollectionBaseTestCase(SalesKingBaseTestCase):
     
     class MockCollectionResponse(object):
         
         def __init__(self):
             self.status_code = 200
-            self.content =u'''
+            self.content = u'''
             {"contacts":[
                 {"contact":
                     {"id":"a2Ux6yswWr4RHCabxfpGMl","number":"K-2012-001","organisation":"salesking123","last_name":"Jane",
@@ -67,7 +68,7 @@ class CollectionBaseTestCase(SalesKingBaseTestCase):
                  ],
                 "links":{"next":"https://frank.dev.salesking.eu/api/contacts?page=2","self":"https://frank.dev.salesking.eu/api/contacts?page=1"},
                 "collection":{"current_page":1,"per_page":50,"total_entries":5,"total_pages":1}
-                }'''.replace(u"\n",u"").replace(u"\t",u"")
+                }'''.replace(u"\n", u"").replace(u"\t", u"")
     mock_response = MockCollectionResponse()
 
 
@@ -77,40 +78,41 @@ class CollectionTestCase(CollectionBaseTestCase):
     coll = None
     # mock the salesking api having a get request
     # mocking the saleskingcolleciont config
+
     def setUp(self):
         self.api_client = api.APIClient()
         self.api_mock = Mock()
         self.api_mock.request.return_value = self.mock_response
 
     def test_initialise_collection(self):
-        col=collection.get_collection_instance("contact",self.api_mock)
+        col=collection.get_collection_instance("contact", self.api_mock)
         col.load(page=1)
         self.assertTrue(len(col.get_items()) == 5)
-        self.assertEquals(col.get_items()[0].number,u"K-2012-001")
-        self.assertEquals(col.get_items()[1].organisation,u"king")
-        self.assertEquals(col.get_items()[3].organisation,u"Werbeagentur Gl\u00fcck")
+        self.assertEquals(col.get_items()[0].number, u"K-2012-001")
+        self.assertEquals(col.get_items()[1].organisation, u"king")
+        self.assertEquals(col.get_items()[3].organisation, u"Werbeagentur Gl\u00fcck")
         
     def test_validate_filters(self):
-        col=collection.get_collection_instance("contact",self.api_mock)
+        col = collection.get_collection_instance("contact", self.api_mock)
         #date-time germany
         #self.assertTrue(col.validate_filter("created_at_from","2012-12-19T00:39:49+01:00"));
-        self.assertTrue(col.validate_filter("number","string"))
-        self.assertFalse(col.validate_filter("notexisting","string"))
-        self.assertTrue(col.validate_filter("birthday_to","2012-01-01"));
-        self.assertFalse(col.validate_filter("birthday_to","string"));
-        self.assertFalse(col.validate_filter("birthday_to","1999-01-32"));
-        self.assertFalse(col.validate_filter("birthday_to","1999-13-01"));
-        self.assertTrue(col.validate_filter("birthday_to","1999-01-01"));
-        self.assertTrue(col.validate_filter("organisation","1999-01-01"));
+        self.assertTrue(col.validate_filter("number", "string"))
+        self.assertFalse(col.validate_filter("notexisting", "string"))
+        self.assertTrue(col.validate_filter("birthday_to", "2012-01-01"));
+        self.assertFalse(col.validate_filter("birthday_to", "string"));
+        self.assertFalse(col.validate_filter("birthday_to", "1999-01-32"));
+        self.assertFalse(col.validate_filter("birthday_to", "1999-13-01"));
+        self.assertTrue(col.validate_filter("birthday_to", "1999-01-01"));
+        self.assertTrue(col.validate_filter("organisation", "1999-01-01"));
     
     def test_set_filters(self):
-        valid_filters = {"q":"salesking", "number":"K-123-0001"}
-        col=collection.get_collection_instance("contact",self.api_mock)
+        valid_filters = {"q": "salesking", "number": "K-123-0001"}
+        col = collection.get_collection_instance("contact", self.api_mock)
         col.set_filters(valid_filters)
         self.assertEquals(valid_filters, col.get_filters())
         
     def test_add_filters(self):
-        col=collection.get_collection_instance("contact",self.api_mock)
-        self.assertTrue(col.add_filter("number","astrstring"))
-        self.failUnlessRaises(SalesKingException,col.add_filter,"notexisting","string")
+        col = collection.get_collection_instance("contact", self.api_mock)
+        self.assertTrue(col.add_filter("number", "astrstring"))
+        self.assertRaises(SalesKingException, col.add_filter, "notexisting", "string")
     
