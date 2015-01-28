@@ -11,13 +11,9 @@
     Initial API based on slumber and warlock
     thanks guys
 """
-    
-import sys
-import os
+
 import logging
-from StringIO import StringIO
-import logging
-import copy
+
 try:
     import simplejson as json
 except ImportError:
@@ -26,11 +22,12 @@ except ImportError:
 from warlock import model_factory
 from warlock.model import Model
 
-from salesking import exceptions
 
-from salesking.utils import loaders, helpers
-from salesking.exceptions import SalesKingException
 from salesking.api import APIClient
+from salesking.utils import loaders, helpers
+
+from salesking.exceptions import APIException
+
 
 
 
@@ -133,12 +130,14 @@ class BaseResource(Resource):
             pass
         return id
         
-    def get_data(self):
+    def to_json(self):
         """
         put the object to json and remove the internal stuff
         """
         data = json.dumps(self)
-        out = u'{"%s":%s}' % (self.schema['title'],data)
+        # salesking schema stores the type in the title
+        #
+        out = u'{"%s":%s}' % (self.schema['title'], data)
         return out
     
     def get_endpoint(self, rel=u"self"):
@@ -149,13 +148,14 @@ class BaseResource(Resource):
                   if row['rel'] == rel:
                       #print "row %s" % row
                       return row
+
         raise APIException("ENDPOINT_NOTFOUND","invalid endpoint")
     
     def get_resource_remote_schema(self):
         response = self._do_api_call(call_type="schema")
         return response
     
-    def _try_to_serialize(self,response):
+    def _try_to_serialize(self, response):
         return response
 
 
@@ -174,22 +174,22 @@ class RemoteResource(BaseResource):
     def _save(self):
         is_update = self.get_id() is not None 
         if is_update:
-            call_type='update'
+            call_type = u'update'
         else:
-            call_type='create'
+            call_type = u'create'
         response = self._do_api_call(call_type=call_type, id=self.get_id())
         return response
     
     def _load(self,id = None):
-        response = self._do_api_call(call_type="load", id=id)
+        response = self._do_api_call(call_type=u"load", id=id)
         return response
     
     def _delete(self):
-        response = self._do_api_call(call_type="delete", id=self.get_id())
+        response = self._do_api_call(call_type=u"delete", id=self.get_id())
         return response
     
     
-    def _do_api_call(self, call_type=u'', id=None):
+    def _do_api_call(self, call_type=u'', id = None):
         """
         returns a response if it is a valid call
         otherwise the corresponding error
@@ -200,15 +200,15 @@ class RemoteResource(BaseResource):
         if call_type == u'load':
             endpoint = self.get_endpoint("self")
             if id is None:
-                raise APIException("LOAD_IDNOTSET","could not load object")
+                raise APIException("LOAD_IDNOTSET", "could not load object")
         elif call_type == u'delete':
             endpoint = self.get_endpoint("destroy")
             if id is None:
-                raise APIException("DELETE_IDNOTSET","could not delete object")
+                raise APIException("DELETE_IDNOTSET", "could not delete object")
         elif call_type == u'update':
             endpoint = self.get_endpoint("update")
             if id is None:
-                raise APIException("UPDATE_IDNOTSET","could not load object")
+                raise APIException("UPDATE_IDNOTSET", "could not load object")
         elif call_type == u'create':
             endpoint = self.get_endpoint("create")
             url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH, endpoint['href'])
@@ -221,7 +221,7 @@ class RemoteResource(BaseResource):
         if id is not None:
             url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH, endpoint['href'].replace(u"{id}",id))
         ## exceute the api request
-        payload = self.get_data()
+        payload = self.to_json()
         method = endpoint['method']
         # request raises exceptions if something goes wrong
         obj = None
@@ -229,11 +229,11 @@ class RemoteResource(BaseResource):
             response = self.__api__.request(url, method, data=payload)
             #load update create success
             if ((response.status_code == 200 and 
-                 call_type in ['load','update']) or 
+                 call_type in ['load', 'update']) or
             (response.status_code == 201 and call_type == 'create')):
                 msg ="call_type: %s successfully completed" % call_type
                 log.info(msg)
-                return self.get_object_from_response(response)
+                return self.to_instance(response)
             elif (response.status_code == 200 and call_type in ['delete']):
             #delete success
                 msg ="call_type: %s successfully completed" % call_type
@@ -242,14 +242,15 @@ class RemoteResource(BaseResource):
             elif 200 <= response.status_code <= 299:
                 return self._try_to_serialize(response)
         except Exception, e:
-            msg ="Exception occoured %s url: %s" % (e,url)
+            msg = "Exception occoured %s url: %s" % (e,url)
             log.error(msg)
             raise e
         
-    def get_object_from_response(self, response):
+    def to_instance(self, response):
         """
-        transforms the response into a new object
-        :param response: valid respone status code 200
+        transforms the response.content to a new instace of
+        object self.schema['title']
+        :param response: valid response
         :returns new instance of current class
         """
         klass = self.schema['title']
