@@ -1,9 +1,7 @@
 from salesking.tests.base import SalesKingBaseTestCase
-from salesking import api, resources, collection
-from salesking.exceptions import SalesKingException
-from mock import Mock
-    
-    
+from salesking import api, collection
+
+
 class LiveInvoiceCollectionBaseTestCase(SalesKingBaseTestCase):
 
     valid_data = {'organisation': u"fb-",
@@ -26,7 +24,7 @@ class LiveInvoiceCollectionBaseTestCase(SalesKingBaseTestCase):
         self.api_client = api.APIClient()
         
     def test_get_invoice_collection(self):
-        valid_filters = {u"organisation": self.org_name_token}
+        valid_filters = {u"q": self.org_name_token}
         col = collection.get_collection_instance("invoice")
         col.set_filters(valid_filters)
         col.set_per_page(10)

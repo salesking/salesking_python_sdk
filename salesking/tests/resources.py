@@ -63,8 +63,8 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         self.assertEquals(client.first_name,u"Dow")
         #autoinitialize ? 
         self.assertFalse(client.__api__ is None)
-        msg = "data is: %s" % (client.get_data())
-        self.assertTrue(len(client.get_data())>0,msg)
+        msg = "data is: %s" % (client.to_json())
+        self.assertTrue(len(client.to_json()) > 0, msg)
         client.first_name = u"honey"
         self.assertEquals(client.first_name,u"honey")
         client.gender="male"
@@ -96,11 +96,11 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         model = resources.get_model_class("contact",api=clnt)
         client = model(self.valid_data)
         self.assertEquals(client.__class__.__name__,u'contact')
-        msg = "data is: %s" % (client.get_data())
-        self.assertTrue(len(client.get_data())>0,msg)
+        msg = "data is: %s" % (client.to_json())
+        self.assertTrue(len(client.to_json()) > 0, msg)
         ### mock the save response ###
         response = self.mock_response
-        obj = client.get_object_from_response(response)
+        obj = client.to_instance(response)
         self.assertEquals(obj.__class__.__name__,u'contact')
         self.assertEquals(obj.first_name, response.mock_first_name)
         self.assertEquals(obj.number, response.mock_number)
@@ -118,13 +118,13 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         address.address1 = u"Foo Street"
         address.address2 = u"Appartment Bar"
         address.address_type = u"work"
-        msg = "data is: %s" % (address.get_data())
-        self.assertTrue(len(address.get_data())>0,msg)
-        msg = "data is: %s" % (client.get_data())
-        self.assertTrue(len(client.get_data())>0,msg)
+        msg = "data is: %s" % (address.to_json())
+        self.assertTrue(len(address.to_json()) > 0, msg)
+        msg = "data is: %s" % (client.to_json())
+        self.assertTrue(len(client.to_json()) > 0, msg)
         client.addresses = [address]
-        msg = "data is: %s" % (client.get_data())
-        self.assertTrue(client.get_data().find(u"Duisburg")>0,msg)
+        msg = "data is: %s" % (client.to_json())
+        self.assertTrue(client.to_json().find(u"Duisburg") > 0, msg)
         
          
 #    def test_client_resource_schema_get_success(self):

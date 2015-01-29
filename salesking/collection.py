@@ -64,16 +64,16 @@ class CollectionAttributesMixin(object):
         get sort by
         """
         return self.sort_by
-    
-    def set_per_page(self,entries = 100):
+
+    def set_per_page(self, entries=100):
         """
         set entries per page max 200
         """
-        if isinstance(entries, int) and entries <=200:
+        if isinstance(entries, int) and entries <= 200:
             self.per_page = int(entries)
             return self
         else:
-            raise SaleskingException("PERPAGE_ONLYINT","Please set an integer <200 for the per-page limit");
+            raise SalesKingException("PERPAGE_ONLYINT", "Please set an integer <200 for the per-page limit");
  
     def get_per_page(self):
         """
@@ -117,8 +117,8 @@ class CollectionAttributesMixin(object):
         get type to fetch
         """
         return self.resource_type
-    
-    def set_resource_type(self,klass):
+
+    def set_resource_type(self, klass):
         """
         set type to load and load schema
         """
@@ -135,19 +135,19 @@ class CollectionAttributesMixin(object):
         for key in filters.keys():
             value = filters[key]
             self.add_filter(key,value)
-            
-    def add_filter(self,key,filter_value):
+
+    def add_filter(self, key, filter_value):
         """
         add and validate a filter with value
         returns True on success otherwise exception
         """
         seek = u"filter[%s]" % key
         if self.validate_filter(key, filter_value):
-            self.filters[key]=filter_value
+            self.filters[key] = filter_value
             return True
         else:
-            #print u"failed to validate: %s" % seek
             msg = u'Invalid filter value: filter:%s value:%s' % (key, filter_value)
+            print msg
             raise SalesKingException("FILTER_INVALID", msg )
     
     def _is_type(self, instance, type):
@@ -176,10 +176,7 @@ class CollectionAttributesMixin(object):
         """
         ok = False
         seek = u"filter[%s]" % key
-        schema = None
-        value  = None
-        is_string_with_format = False
-        string_format = None
+        value = None
         for link in self.schema['links']:
             if link['rel'] == 'instances':
                for property in link['properties']:
@@ -190,7 +187,7 @@ class CollectionAttributesMixin(object):
             return False
         ok = self._is_type(filter_value, value['type'])
         # if string with type add validation
-        if ok == True and value['type'] == 'string' and 'format' in value.keys():
+        if ok is True and value['type'] == 'string' and 'format' in value.keys():
             ok = self._validate_json_format(filter_value, value)
             
         return ok

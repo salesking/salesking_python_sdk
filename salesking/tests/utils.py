@@ -5,25 +5,26 @@ from salesking.utils import loaders, helpers, validators
 from salesking.tests.base import SalesKingBaseTestCase
 from salesking.exceptions import SalesKingException
 
+
 class SKUtilsTestCase(SalesKingBaseTestCase):
     
     def test_load_client_schema_success(self):
         a_json = loaders.load_schema(u"client")
-        self.assertTrue(a_json != None)
-        self.assertTrue(a_json['type'] != None)
+        self.assertTrue(a_json is not None)
+        self.assertTrue(a_json['type'] is not None)
     
     def test_load_schema_fails(self):
         thrown = False
         try:
-            loaders.load_schema("notexisting");
+            loaders.load_schema("notexisting")
         except SalesKingException, e:
-            if (e.code == "SCHEMA_NOTFOUND"):
+            if (e.code == "SCHEMA_NOT_FOUND"):
                thrown=True
         self.assertTrue(thrown)
         
     def test_pluralize(self):
-        self.assertEquals("clients", helpers.pluralize("client"));
-        self.assertEquals("companies", helpers.pluralize("company"));
+        self.assertEquals("clients", helpers.pluralize("client"))
+        self.assertEquals("companies", helpers.pluralize("company"))
         
     def test_json_schema_validation_datetime_pass(self):
         schema = {u'format': u'date-time'}

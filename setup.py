@@ -34,7 +34,10 @@ setup(
         'iso8601==0.1.4',
         'warlock==0.8.0',
         'mock==1.0.1',
+        'jsonref==0.2_dev',
     ],
+    ## git+https://github.com/gazpachoking/jsonref.git@0ad88d1f35e#egg=jsonref
+    ##
     dependency_links = [
         'https://github.com/bcwaldon/warlock/tarball/0.8.0#egg=warlock-0.8.0',
     ],             
