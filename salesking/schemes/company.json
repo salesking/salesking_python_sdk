@@ -77,7 +77,7 @@
     "addresses":{
       "description": "A company can have many addresses, sorted by date descending(new first). Default address used in placeholder is the most recent one.",
       "type":"array",
-      "properties" : {"$ref":"./addresses.json#properties"}
+      "properties": {"$ref": "./address.json#properties"}
     },
     "vat_number":{
       "description": "VAT number, for a company entitled to pay value added taxes.",
