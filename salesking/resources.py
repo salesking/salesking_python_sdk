@@ -13,11 +13,14 @@
 """
 
 import logging
+import os
 
 try:
     import simplejson as json
 except ImportError:
     import json
+
+import jsonschema
 
 from warlock import model_factory
 from warlock.model import Model
@@ -28,34 +31,54 @@ from salesking.utils import loaders, helpers
 
 from salesking.exceptions import APIException
 
-
-
+from salesking.conf.settings import SCHEMA_ROOT
+from salesking.utils import resolver
 
 log = logging.getLogger(__name__)
 
 API_BASE_PATH = u'api/'
 
 
-class Resource(Model):
+class ValidateAbleResource(Model):
+    """
+    Any resource is validateable
+    """
+    # overwrite the Warlock Validate method here
+    # to apply the own resolver for #ref values
+
+    def validate(self, data):
+        """Apply a JSON schema to an object"""
+        try:
+            schema_path = os.path.normpath(SCHEMA_ROOT)
+            location = u'file://%s' % (schema_path)
+            fs_resolver = resolver.LocalRefResolver(location, self.schema)
+            jsonschema.Draft3Validator(self.schema, resolver=fs_resolver).validate(data)
+
+        except jsonschema.ValidationError as exc:
+            raise exceptions.ValidationError(str(exc))
+
+
+class Resource(ValidateAbleResource):
     """
     General Flow for load, save, delete
     """
-    def _save(self,*args,**kwargs):
+
+    def _save(self, *args, **kwargs):
         raise Exception("Please implement _save() in subclass")
-    
-    def _delete(self,id,*args,**kwargs):
+
+    def _delete(self, id, **kwargs):
         raise Exception("Please implement _save() in subclass")
-    
-    def _load(self,id,*args,**kwargs):
+
+    def _load(self, id, *args, **kwargs):
         raise Exception("Please implement _save() in subclass")
-    
-    def _pre_save(self,*args,**kwargs):
+
+    def _pre_save(self, *args, **kwargs):
         """
         pre save hook
         """
         pass
-    
-    def _post_save(self,response,*args,**kwargs):
+
+    def _post_save(self, response, *args, **kwargs):
         """
         post save hook
         """
@@ -70,14 +93,14 @@ class Resource(Model):
         response = self._save(*args, **kwargs)
         response = self._post_save(response, *args, **kwargs)
         return response
-    
-    def _pre_load(self,id,*args,**kwargs):
+
+    def _pre_load(self, id, *args, **kwargs):
         """
         pre load hook
         """
         pass
-    
-    def _post_load(self,response,*args,**kwargs):
+
+    def _post_load(self, response, *args, **kwargs):
         """
         post laod hook
         """
@@ -87,8 +110,8 @@ class Resource(Model):
         """
         loads a remote resource by id
         """
-        self._pre_load(*args, **kwargs)
-        response = self._load(*args, **kwargs)
+        self._pre_load(id, *args, **kwargs)
+        response = self._load(id, *args, **kwargs)
         response = self._post_load(response, *args, **kwargs)
         return response
     
@@ -97,8 +120,8 @@ class Resource(Model):
         pre delete hook
         """
         pass
-    
-    def _post_delete(self, response,*args,**kwargs):
+
+    def _post_delete(self, response, *args, **kwargs):
         """
         post delete hook
         """
@@ -133,10 +156,10 @@ class BaseResource(Resource):
     def to_json(self):
         """
         put the object to json and remove the internal stuff
+        salesking schema stores the type in the title
         """
         data = json.dumps(self)
-        # salesking schema stores the type in the title
-        #
+
         out = u'{"%s":%s}' % (self.schema['title'], data)
         return out
     
@@ -146,10 +169,9 @@ class BaseResource(Resource):
         if (schema_loaded and links_present):
              for row in self.schema['links']:
                   if row['rel'] == rel:
-                      #print "row %s" % row
+                      print "endpoint row %s" % row
                       return row
-
-        raise APIException("ENDPOINT_NOTFOUND","invalid endpoint")
+        raise APIException("ENDPOINT_NOTFOUND", "invalid endpoint")
     
     def get_resource_remote_schema(self):
         response = self._do_api_call(call_type="schema")
@@ -169,7 +191,7 @@ class RemoteResource(BaseResource):
     """
 
     def __repr__(self):
-        return u'<RemoteResource id:%s>' %(self.get_id())
+        return u'<RemoteResource id:%s>' % (self.get_id())
     
     def _save(self):
         is_update = self.get_id() is not None 
@@ -179,15 +201,19 @@ class RemoteResource(BaseResource):
             call_type = u'create'
         response = self._do_api_call(call_type=call_type, id=self.get_id())
         return response
-    
-    def _load(self,id = None):
+
+    def _load(self, id=None):
         response = self._do_api_call(call_type=u"load", id=id)
         return response
     
     def _delete(self):
         response = self._do_api_call(call_type=u"delete", id=self.get_id())
         return response
-    
+
+    def _destroy(self):
+        response = self._do_api_call(call_type=u"destroy", id=self.get_id())
+        return response
+
     
     def _do_api_call(self, call_type=u'', id = None):
         """
@@ -197,11 +223,12 @@ class RemoteResource(BaseResource):
         """
         endpoint = None
         url = None
+        # print "call_type %s" % (call_type)
         if call_type == u'load':
             endpoint = self.get_endpoint("self")
             if id is None:
                 raise APIException("LOAD_IDNOTSET", "could not load object")
-        elif call_type == u'delete':
+        elif call_type == u'delete' or (call_type == u"destroy"):
             endpoint = self.get_endpoint("destroy")
             if id is None:
                 raise APIException("DELETE_IDNOTSET", "could not delete object")
@@ -212,6 +239,7 @@ class RemoteResource(BaseResource):
         elif call_type == u'create':
             endpoint = self.get_endpoint("create")
             url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH, endpoint['href'])
+            # post?
         elif call_type == u'schema':
             # add schema gethering functionality 
             # hackisch
@@ -220,29 +248,36 @@ class RemoteResource(BaseResource):
             endpoint['method'] = u'GET'    
         if id is not None:
             url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH, endpoint['href'].replace(u"{id}",id))
-        ## exceute the api request
+        ## excecute the api request
         payload = self.to_json()
-        method = endpoint['method']
+
+        if u'method' in endpoint.keys():
+            method = endpoint['method']
+        else:
+            method = u'GET'
         # request raises exceptions if something goes wrong
         obj = None
         try:
+            # dbg
+            msg = u"url: %s method:%s p: %s" % (url, method, payload)
+            print msg
             response = self.__api__.request(url, method, data=payload)
             #load update create success
             if ((response.status_code == 200 and 
                  call_type in ['load', 'update']) or
             (response.status_code == 201 and call_type == 'create')):
-                msg ="call_type: %s successfully completed" % call_type
+                msg = "call_type: %s successfully completed" % call_type
                 log.info(msg)
                 return self.to_instance(response)
-            elif (response.status_code == 200 and call_type in ['delete']):
+            elif (response.status_code == 200 and call_type in ['delete', 'destroy']):
             #delete success
                 msg ="call_type: %s successfully completed" % call_type
                 log.info(msg)
                 return self._try_to_serialize(response)
             elif 200 <= response.status_code <= 299:
                 return self._try_to_serialize(response)
-        except Exception, e:
-            msg = "Exception occoured %s url: %s" % (e,url)
+        except Exception as e:
+            msg = "Exception occoured %s url: %s" % (e, url)
             log.error(msg)
             raise e
         
