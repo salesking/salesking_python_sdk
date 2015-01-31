@@ -250,7 +250,6 @@ class RemoteResource(BaseResource):
             url = u"%s%s%s" % (self.__api__.base_url, API_BASE_PATH, endpoint['href'].replace(u"{id}",id))
         ## excecute the api request
         payload = self.to_json()
-
         if u'method' in endpoint.keys():
             method = endpoint['method']
         else:
