@@ -35,7 +35,16 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         msg = "data is: %s" % (client.to_json())
         self.assertTrue(client.to_json().find(u"Duisburg") > 0, msg)
         self.assertTrue(client.id is not None ,msg)
-        
+
+
+    def test_get_invoice_by_id(self):
+        model = resources.get_model_class("invoice")
+        client = model()
+        # invoices/a6SaCWlb8r4yBvabxfpGMl
+        client = client.load(id=u'a6SaCWlb8r4yBvabxfpGMl')
+        self.assertEqual(client.get_id(), u'a6SaCWlb8r4yBvabxfpGMl')
+
+
     
         
         
