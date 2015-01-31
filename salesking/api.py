@@ -142,7 +142,7 @@ class APIClient(SalesKingApiBase):
         #            headers.update(auth_header)
         #basic auth
         msg = "method: %s url:%s\nheaders:%s\ndata:%s" % (
-                   method,url,headers,data)
+            method, url, headers, data)
         #print msg
         if not self.use_oauth:
             auth = (self.sk_user, self.sk_pw)

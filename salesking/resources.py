@@ -169,7 +169,7 @@ class BaseResource(Resource):
         if (schema_loaded and links_present):
              for row in self.schema['links']:
                   if row['rel'] == rel:
-                      print "endpoint row %s" % row
+                      # print "endpoint row %s" % row
                       return row
         raise APIException("ENDPOINT_NOTFOUND", "invalid endpoint")
     
@@ -260,7 +260,7 @@ class RemoteResource(BaseResource):
         try:
             # dbg
             msg = u"url: %s method:%s p: %s" % (url, method, payload)
-            print msg
+            #print msg
             response = self.__api__.request(url, method, data=payload)
             #load update create success
             if ((response.status_code == 200 and 
