@@ -58,12 +58,17 @@ The SDK wraps the REST json schema API.
     col = collection.get_collection_instance("contact")
     col.set_filters(valid_filters)
     col.load()
-    for x in col.items:
-     	print u"number: %s name: %s" % (x.number,x.organisation)
+    items = col.get_items()
+    for x in items:
+     	print u"id: %s name: %s" % (x.id, x.organisation)
+    col.reset_items()
     col.load(page=2)
+    items = col.get_items()
     for x in col.items:
-     	print u"number: %s name: %s" % (x.number,x.organisation)
-    
+     	print u"id: %s name: %s" % (x.id, x.organisation)
+
+
+
 ## What you need to do in order to start
 
 1) Register and activate a DEVELOPMENT USER at
@@ -104,8 +109,10 @@ The SDK wraps the REST json schema API.
 5) run python -m unittest tests (logger silenced)
 
 
-# TODO:
+#Sidenotes:
+###########
 
-	* Examples
-	* Add Invoice
-	* Send Invoice
+This SDK uses the automatic jsonschema validation of properties,
+in order to make it work, it removes porperties from the recieved
+data, that are containing None values, this means you have
+to wrap any data access in a try: except block...
