@@ -177,19 +177,11 @@ def import_schema_to_json(name, store_it=False):
         log.error(u"file not found %s" % e)
         msg = "Could not find schema file. %s" % file_path
         raise SalesKingException("SCHEMA_NOT_FOUND", msg)
-
-    if not JsonSchemaStore.is_stored(name):
-        schema = json.loads(schema_file)
-        if schema is not None and store_it:
-            JsonSchemaStore.copy_to_store(name, schema)
-
-    if JsonSchemaStore.is_stored(name):
-        schema = JsonSchemaStore.get_from_store(name)
+    schema = json.loads(schema_file)
 
     if schema is None:
         msg = "loading failed foo %s" % name
         raise SalesKingException("SCHEMA_NOT_FOUND", msg)
-
     return schema
 
 
@@ -261,8 +253,9 @@ def load_schema(name):
     schema['name'] = schema['title']
     ## go one level deeper as we now have some replacements
 
-
-
+    # put it to storage when done
+    # if not JsonSchemaStore.is_stored(name) and (schema is not None):
+    #    JsonSchemaStore.copy_to_store(name, schema)
     return schema
 
 

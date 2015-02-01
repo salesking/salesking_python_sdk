@@ -1,9 +1,7 @@
 from salesking.tests.base import SalesKingBaseTestCase
-from salesking import api, resources, collection
-from salesking.exceptions import SalesKingException
-from mock import Mock
-    
-    
+from salesking import collection
+
+
 class LiveCollectionResponseTestCase(SalesKingBaseTestCase):
 
     
@@ -17,7 +15,8 @@ class LiveCollectionResponseTestCase(SalesKingBaseTestCase):
         col.load()
         msg = "query:%s" % col._last_query_str
         self.assertTrue(col._last_query_str is not None, msg)
-        self.assertTrue(len(col.get_items()) > 0)
+        items = col.get_items()
+        self.assertTrue(len(items) > 0)
         self.assertTrue(col.total_pages >= 1)
         self.assertTrue(col.total_entries > 0)
         

@@ -55,7 +55,8 @@ class ValidateAbleResource(Model):
             jsonschema.Draft3Validator(self.schema, resolver=fs_resolver).validate(data)
 
         except jsonschema.ValidationError as exc:
-            raise exceptions.ValidationError(str(exc))
+            # print "data %s" % (data)
+            raise jsonschema.exceptions.ValidationError(str(exc))
 
 
 class Resource(ValidateAbleResource):
@@ -152,6 +153,14 @@ class BaseResource(Resource):
         except:
             pass
         return id
+
+    def get_links(self):
+        links = None
+        try:
+            links = self.__getattr__(u'links')
+        except:
+            pass
+        return links
         
     def to_json(self):
         """
@@ -282,9 +291,9 @@ class RemoteResource(BaseResource):
         
     def to_instance(self, response):
         """
-        transforms the response.content to a new instace of
+        transforms the content to a new instace of
         object self.schema['title']
-        :param response: valid response
+        :param content: valid response
         :returns new instance of current class
         """
         klass = self.schema['title']
@@ -292,8 +301,31 @@ class RemoteResource(BaseResource):
         jdict = json.loads(response.content, encoding="utf-8")
         ### check if we have a response
         properties_dict = jdict[self.schema['title']]
+        # @todo: find a way to handle the data
+        # validation fails if the none values are not removed
+        new_dict = helpers.remove_properties_containing_None(properties_dict)
+        #jdict[self.schema['title']] = new_dict
+        obj = cls(new_dict)
+        #obj.links = jdict[self.schema['title']]['links']
+        return obj
+
+    def dict_to_instance(self, content):
+        """
+        transforms the content to a new instace of
+        object self.schema['title']
+        :param content: valid response
+        :returns new instance of current class
+        """
+        klass = self.schema['title']
+        cls = get_model_class(klass, api=self.__api__)
+        # jdict = json.loads(content, encoding="utf-8")
+        ### check if we have a response
+        properties_dict = content[self.schema['title']][self.schema['title']]
+        #@todo: find a way to handle the data
+        # validation fails if the none values are not removed
         new_dict = helpers.remove_properties_containing_None(properties_dict)
         obj = cls(new_dict)
+        #obj.links = content[self.schema['title']]['links']
         return obj
     
       
